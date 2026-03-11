@@ -164,6 +164,26 @@ function matchLore(loreName: string, options: FactionOption[]): FactionOption | 
   );
 }
 
+/**
+ * Resolve available manifestation lore options for a faction.
+ * Most factions reference manifestation lores indirectly via a hidden "Manifestation Lore"
+ * selectionEntry that links to a "Manifestation Lores" group in Lores.cat. Falls back to
+ * direct `manifestationLores` on the faction catalogue when present.
+ */
+function resolveManifestationLoreOptions(
+  factionCat: Awaited<ReturnType<typeof fetchCatalogue>>,
+  loresCat: Awaited<ReturnType<typeof fetchCatalogue>> | null
+): FactionOption[] {
+  if (factionCat.manifestationLores.length > 0) return factionCat.manifestationLores;
+  if (factionCat.manifestationLoreGroupId && loresCat) {
+    const group = loresCat.selectionEntryGroups.find(
+      (g) => g.id === factionCat.manifestationLoreGroupId
+    );
+    return group?.options.filter((o) => !o.hidden) ?? [];
+  }
+  return [];
+}
+
 async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList; warnings: string[] }> {
   const warnings: string[] = [];
 
@@ -173,13 +193,10 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
     warnings.push(`Could not find faction "${parsed.factionName}". Please set it manually.`);
   }
 
-  // --- Match subfaction ---
+  // --- Match subfaction (preliminary — validated after catalogue loads) ---
   let subfaction: Subfaction | null = null;
   if (parsed.subfactionName && faction) {
     subfaction = matchSubfaction(parsed.subfactionName, faction.name, KNOWN_SUBFACTIONS);
-    if (!subfaction) {
-      warnings.push(`Could not find subfaction "${parsed.subfactionName}". Please set it manually.`);
-    }
   }
 
   // --- Match force ---
@@ -191,6 +208,7 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
   // --- Load catalogues ---
   let allUnitOptions: UnitOption[] = [];
   let factionCat: Awaited<ReturnType<typeof fetchCatalogue>> | null = null;
+  let loresCat: Awaited<ReturnType<typeof fetchCatalogue>> | null = null;
 
   if (faction) {
     try {
@@ -209,9 +227,37 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
       }
 
       allUnitOptions = buildUnitOptions(factionCat, subfactionCat, libraryCat);
+
+      // Load Lores.cat when needed (for manifestation lore or indirect lore resolution)
+      if (
+        factionCat.manifestationLoreGroupId !== null ||
+        factionCat.manifestationLores.length > 0 ||
+        parsed.manifestationLoreName
+      ) {
+        try {
+          loresCat = await fetchCatalogue('Lores.cat');
+        } catch { /* optional */ }
+      }
     } catch (e) {
       warnings.push(`Failed to load catalogue for "${faction.name}": ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  // --- Resolve subfaction vs formation ambiguity ---
+  // In New Recruit exports the battle formation name appears directly after the faction name
+  // (same position as the subfaction). If `subfactionName` didn't match a known subfaction,
+  // try to match it as a battle formation instead.
+  let battleFormationFromSubfactionLine: FactionOption | null = null;
+  if (parsed.subfactionName && !subfaction && factionCat) {
+    battleFormationFromSubfactionLine = matchLore(parsed.subfactionName, factionCat.battleFormations);
+    if (!battleFormationFromSubfactionLine) {
+      // Still not found — warn so the user can set it manually
+      warnings.push(
+        `Could not find subfaction or battle formation "${parsed.subfactionName}". Please set it manually.`
+      );
+    }
+  } else if (parsed.subfactionName && !subfaction) {
+    warnings.push(`Could not find subfaction "${parsed.subfactionName}". Please set it manually.`);
   }
 
   // --- Helper: resolve a parsed unit to an ArmyUnit ---
@@ -274,9 +320,14 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
     if (unit) auxiliaryUnits.push(unit);
   }
 
+  // --- Resolve manifestation lore options (direct from faction or from Lores.cat) ---
+  const manifestationLoreOptions = factionCat
+    ? resolveManifestationLoreOptions(factionCat, loresCat)
+    : [];
+
   // --- Match lores (best-effort) ---
   let battleTraitProfiles: Profile[] = [];
-  let battleFormation: FactionOption | null = null;
+  let battleFormation: FactionOption | null = battleFormationFromSubfactionLine;
   let spellLore: FactionOption | null = null;
   let prayerLore: FactionOption | null = null;
   let manifestationLore: FactionOption | null = null;
@@ -284,12 +335,26 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
   if (factionCat) {
     battleTraitProfiles = factionCat.battleTraitProfiles;
 
+    // Explicit "Battle Formation - X" lines from the text body
     if (parsed.battleFormationName) {
-      battleFormation = matchLore(parsed.battleFormationName, factionCat.battleFormations);
-      if (!battleFormation) {
+      const match = matchLore(parsed.battleFormationName, factionCat.battleFormations);
+      if (match) {
+        battleFormation = match;
+      } else {
         warnings.push(`Battle formation "${parsed.battleFormationName}" not found. Please set manually.`);
       }
     }
+
+    // Second inline line (when both subfaction and formation appear in the text)
+    if (parsed.inlineFormationName && !battleFormation) {
+      const match = matchLore(parsed.inlineFormationName, factionCat.battleFormations);
+      if (match) {
+        battleFormation = match;
+      } else {
+        warnings.push(`Battle formation "${parsed.inlineFormationName}" not found. Please set manually.`);
+      }
+    }
+
     if (parsed.spellLoreName) {
       spellLore = matchLore(parsed.spellLoreName, factionCat.spellLores);
       if (!spellLore) {
@@ -303,7 +368,7 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
       }
     }
     if (parsed.manifestationLoreName) {
-      manifestationLore = matchLore(parsed.manifestationLoreName, factionCat.manifestationLores);
+      manifestationLore = matchLore(parsed.manifestationLoreName, manifestationLoreOptions);
       if (!manifestationLore) {
         warnings.push(`Manifestation lore "${parsed.manifestationLoreName}" not found. Please set manually.`);
       }
@@ -434,7 +499,10 @@ export function ImportModal({ onImport, onClose }: ImportModalProps) {
                       <tr><td>Force</td><td><strong>{preview.forceName}</strong></td></tr>
                       <tr><td>Faction</td><td><strong>{preview.factionName}</strong></td></tr>
                       {preview.subfactionName && (
-                        <tr><td>Subfaction</td><td><strong>{preview.subfactionName}</strong></td></tr>
+                        <tr><td>Subfaction / Formation</td><td><strong>{preview.subfactionName}</strong></td></tr>
+                      )}
+                      {preview.inlineFormationName && (
+                        <tr><td>Formation</td><td><strong>{preview.inlineFormationName}</strong></td></tr>
                       )}
                       <tr>
                         <td>Regiments</td>

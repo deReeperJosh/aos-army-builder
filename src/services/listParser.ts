@@ -17,8 +17,16 @@ export interface ParsedList {
   /** The force/handbook name as written in the text (e.g. "✦ General's Handbook 2025-26") */
   forceName: string;
   factionName: string;
-  /** Subfaction/subfaction group name, if present */
+  /** Subfaction name if present (first non-metadata line after faction name) */
   subfactionName: string | null;
+  /**
+   * A second non-metadata line found directly after the subfaction/faction line.
+   * In New Recruit exports this can be the battle formation name when both a
+   * subfaction AND a formation are selected. When only one non-metadata line
+   * appears, it is captured as `subfactionName` — the ImportModal resolves
+   * whether it is actually a subfaction or a formation.
+   */
+  inlineFormationName: string | null;
   regiments: ParsedRegiment[];
   auxiliaryUnits: ParsedUnit[];
   spellLoreName: string | null;
@@ -131,16 +139,29 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
   // --- Optional subfaction (next non-metadata line that isn't a regiment header / unit / lore) ---
   while (i < lines.length && (isMetadataLine(lines[i]) || lines[i].startsWith('•'))) i++;
 
+  /** True if a candidate line should NOT be treated as subfaction / formation text */
+  function isNotPreSectionText(line: string): boolean {
+    return (
+      isRegimentHeader(line) ||
+      isAuxiliaryHeader(line) ||
+      parseUnitLine(line) !== null ||
+      parseLoreLine(line) !== null ||
+      isEndMarker(line)
+    );
+  }
+
   let subfactionName: string | null = null;
-  if (
-    i < lines.length &&
-    !isRegimentHeader(lines[i]) &&
-    !isAuxiliaryHeader(lines[i]) &&
-    !parseUnitLine(lines[i]) &&
-    !parseLoreLine(lines[i]) &&
-    !isEndMarker(lines[i])
-  ) {
+  let inlineFormationName: string | null = null;
+
+  if (i < lines.length && !isNotPreSectionText(lines[i])) {
     subfactionName = lines[i++];
+
+    // Look for a second non-metadata line — in New Recruit this is the battle formation
+    // when both a subfaction and a formation are chosen.
+    while (i < lines.length && (isMetadataLine(lines[i]) || lines[i].startsWith('•'))) i++;
+    if (i < lines.length && !isNotPreSectionText(lines[i])) {
+      inlineFormationName = lines[i++];
+    }
   }
 
   // --- Parse the body ---
@@ -212,6 +233,7 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
     forceName,
     factionName,
     subfactionName,
+    inlineFormationName,
     regiments,
     auxiliaryUnits,
     spellLoreName,

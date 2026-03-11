@@ -198,11 +198,12 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
 
       setAllUnits(unique);
 
-      // Load Lores.cat if this faction has lore options
+      // Load Lores.cat if this faction has lore options (direct or indirect via entryLink)
       if (
         factionCatLoaded.spellLores.length > 0 ||
         factionCatLoaded.prayerLores.length > 0 ||
-        factionCatLoaded.manifestationLores.length > 0
+        factionCatLoaded.manifestationLores.length > 0 ||
+        factionCatLoaded.manifestationLoreGroupId !== null
       ) {
         try {
           const lores = await fetchCatalogue('Lores.cat');
@@ -256,6 +257,23 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     return group.options.flatMap((o) => o.profiles);
   };
 
+  // ---- Manifestation lore options: faction-direct or resolved from Lores.cat ----
+  // Most factions reference manifestation lores indirectly via manifestationLoreGroupId.
+  // The Lores.cat "Manifestation Lores" group lives in selectionEntryGroups of that catalogue.
+  const availableManifestationLores: FactionOption[] = (() => {
+    if (!factionCat) return [];
+    // Faction has direct options (uncommon)
+    if (factionCat.manifestationLores.length > 0) return factionCat.manifestationLores;
+    // Fall back to the shared Lores.cat group the faction links to
+    if (factionCat.manifestationLoreGroupId && loresCat) {
+      const group = loresCat.selectionEntryGroups.find(
+        (g) => g.id === factionCat.manifestationLoreGroupId
+      );
+      return group?.options.filter((o) => !o.hidden) ?? [];
+    }
+    return [];
+  })();
+
   // ---- Faction option handlers ----
   const handleSelectFormation = (formationId: string) => {
     if (!factionCat) return;
@@ -281,9 +299,8 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   };
 
   const handleSelectManifestationLore = (loreId: string) => {
-    if (!factionCat) return;
     if (!loreId) { onUpdateArmy({ manifestationLore: null }); return; }
-    const option = factionCat.manifestationLores.find((l) => l.id === loreId);
+    const option = availableManifestationLores.find((l) => l.id === loreId);
     if (!option) return;
     onUpdateArmy({ manifestationLore: { ...option, profiles: getLoreProfiles(option) } });
   };
@@ -597,7 +614,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                 )}
 
                 {/* Manifestation Lore */}
-                {factionCat.manifestationLores.length > 0 && supportsLores && (
+                {availableManifestationLores.length > 0 && supportsLores && (
                   <div className="army-option-row">
                     <label className="army-option-label">🌀 Manifestation</label>
                     <select
@@ -606,7 +623,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                       onChange={(e) => handleSelectManifestationLore(e.target.value)}
                     >
                       <option value="">— None —</option>
-                      {factionCat.manifestationLores.map((l) => (
+                      {availableManifestationLores.map((l) => (
                         <option key={l.id} value={l.id}>{l.name}</option>
                       ))}
                     </select>
