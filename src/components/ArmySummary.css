@@ -1,5 +1,12 @@
 .army-summary {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   padding: 1rem;
+  width: 100%;
+}
+
+.army-summary-inner {
   max-width: 900px;
   margin: 0 auto;
 }

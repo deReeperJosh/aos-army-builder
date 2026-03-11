@@ -87,7 +87,48 @@ export function parseGameSystem(xmlText: string): GameSystem {
   };
 }
 
-export function parseCatalogue(xmlText: string): Catalogue {
+/**
+ * Parse the GST (game system) XML to build a map from Regiment of Renown forceEntry ID
+ * to the set of faction catalogue IDs that are allowed to include it.
+ *
+ * Each Regiment of Renown forceEntry in the GST has `instanceOf` conditions with
+ * `scope="parent"` that restrict which faction catalogues can include the regiment.
+ */
+export function parseRenownAllowances(gstXml: string): Record<string, string[]> {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(gstXml, 'application/xml');
+  const root = doc.documentElement;
+  const ns = GST_NS;
+
+  const allowances: Record<string, string[]> = {};
+
+  for (const fe of Array.from(root.getElementsByTagNameNS(ns, 'forceEntry'))) {
+    const feId = fe.getAttribute('id') ?? '';
+    if (!feId) continue;
+
+    const catalogueIds: string[] = [];
+    for (const cond of Array.from(fe.getElementsByTagNameNS(ns, 'condition'))) {
+      if (
+        cond.getAttribute('type') === 'instanceOf' &&
+        cond.getAttribute('scope') === 'parent'
+      ) {
+        const childId = cond.getAttribute('childId');
+        if (childId) catalogueIds.push(childId);
+      }
+    }
+
+    if (catalogueIds.length > 0) {
+      allowances[feId] = catalogueIds;
+    }
+  }
+
+  return allowances;
+}
+
+export function parseCatalogue(
+  xmlText: string,
+  renownAllowances: Record<string, string[]> = {}
+): Catalogue {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xmlText, 'application/xml');
   const root = doc.documentElement;
@@ -140,10 +181,36 @@ export function parseCatalogue(xmlText: string): Catalogue {
   );
   const manifestationLores = manifestationLoreGroup?.options.filter((o) => !o.hidden) ?? [];
 
-  // Extract Regiments of Renown (only present in the dedicated Regiments of Renown.cat)
+  // Extract Regiments of Renown (only present in the dedicated Regiments of Renown.cat).
+  // For each entry, also extract the condition childId (a forceEntry ID from the GST) and use
+  // the optional renownAllowances map to resolve it to the faction catalogue IDs that may use it.
+  const renownForceEntryIdMap = new Map<string, string>(); // entry id -> GST forceEntry id
+  for (const container of directChildren(root, 'sharedSelectionEntries', ns)) {
+    for (const el of directChildren(container, 'selectionEntry', ns)) {
+      const entryName = el.getAttribute('name') ?? '';
+      if (!entryName.startsWith('Regiment of Renown:')) continue;
+      const entryId = el.getAttribute('id') ?? '';
+      for (const cond of Array.from(el.getElementsByTagNameNS(ns, 'condition'))) {
+        if (cond.getAttribute('type') === 'instanceOf') {
+          const childId = cond.getAttribute('childId');
+          if (childId) {
+            renownForceEntryIdMap.set(entryId, childId);
+            break;
+          }
+        }
+      }
+    }
+  }
+
   const renownRegiments: RenownRegiment[] = selectionEntries
     .filter((e) => e.name.startsWith('Regiment of Renown:'))
-    .map((e) => ({ id: e.id, name: e.name, profiles: e.profiles }));
+    .map((e) => {
+      const forceEntryId = renownForceEntryIdMap.get(e.id);
+      const allowedCatalogueIds = forceEntryId
+        ? (renownAllowances[forceEntryId] ?? [])
+        : [];
+      return { id: e.id, name: e.name, profiles: e.profiles, allowedCatalogueIds };
+    });
 
   return {
     id: root.getAttribute('id') ?? '',

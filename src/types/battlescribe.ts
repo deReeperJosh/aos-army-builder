@@ -127,6 +127,7 @@ export interface RenownRegiment {
   id: string;
   name: string;      // e.g. "Regiment of Renown: The Blacktalons"
   profiles: Profile[];
+  allowedCatalogueIds: string[]; // Faction catalogue IDs that may include this regiment
 }
 
 export interface Catalogue {

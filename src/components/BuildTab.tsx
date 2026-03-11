@@ -9,7 +9,7 @@ import type {
   Profile,
   RenownRegiment,
 } from '../types/battlescribe';
-import { fetchCatalogue } from '../services/dataFetcher';
+import { fetchCatalogue, fetchRenownAllowances } from '../services/dataFetcher';
 import {
   GHB_2025_FORCE_ID,
   getValidRegimentUnits,
@@ -161,9 +161,10 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
         } catch { /* Lores.cat may not be available */ }
       }
 
-      // Load Regiments of Renown catalogue
+      // Load Regiments of Renown catalogue (with faction allowances from the GST)
       try {
-        const renown = await fetchCatalogue('Regiments of Renown.cat');
+        const allowances = await fetchRenownAllowances();
+        const renown = await fetchCatalogue('Regiments of Renown.cat', allowances);
         setRenownCat(renown);
       } catch { /* May not be available */ }
 
@@ -187,8 +188,14 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     !u.categoryLinks.some((cl) => cl.targetId === FACTION_TERRAIN_CAT_ID)
   );
 
-  // ---- Regiment of Renown options from renown catalogue ----
-  const availableRenownRegiments: RenownRegiment[] = renownCat?.renownRegiments ?? [];
+  // ---- Regiment of Renown options: filtered to factions that can use each regiment ----
+  const factionCatalogueId = army.faction?.id ?? '';
+  const availableRenownRegiments: RenownRegiment[] = (renownCat?.renownRegiments ?? []).filter(
+    (r) =>
+      // If allowedCatalogueIds is empty (no restriction extracted), show to all; otherwise filter
+      r.allowedCatalogueIds.length === 0 ||
+      r.allowedCatalogueIds.includes(factionCatalogueId)
+  );
 
   // ---- Lore profile lookup ----
   const getLoreProfiles = (option: FactionOption): Profile[] => {

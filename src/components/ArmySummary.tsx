@@ -68,7 +68,8 @@ export function ArmySummary({ army }: ArmySummaryProps) {
 
   return (
     <div className="army-summary">
-      <div className="army-summary-header">
+      <div className="army-summary-inner">
+        <div className="army-summary-header">
         <div className="army-summary-title">
           <span className="army-summary-name">{army.name}</span>
           {army.faction && (
@@ -105,16 +106,17 @@ export function ArmySummary({ army }: ArmySummaryProps) {
       )}
 
       {cards.length === 0 ? (
-        <div className="army-summary-empty">
-          <p>No units added yet. Add units in the Build Army tab.</p>
-        </div>
-      ) : (
-        <div className="army-summary-cards">
-          {cards.map((card) => (
-            <UnitCard key={card.unit.id} {...card} />
-          ))}
-        </div>
-      )}
+          <div className="army-summary-empty">
+            <p>No units added yet. Add units in the Build Army tab.</p>
+          </div>
+        ) : (
+          <div className="army-summary-cards">
+            {cards.map((card) => (
+              <UnitCard key={card.unit.id} {...card} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
