@@ -14,6 +14,8 @@ import type {
   FactionOption,
   FactionOptionGroup,
   RenownRegiment,
+  WargearOption,
+  WargearOptionGroup,
 } from '../types/battlescribe';
 
 const GST_NS = 'http://www.battlescribe.net/schema/gameSystemSchema';
@@ -302,6 +304,31 @@ function parseSelectionEntry(el: Element, ns: string): SelectionEntry {
     }
   }
 
+  // Parse wargear option groups (selectionEntryGroups named "Wargear Options")
+  const wargearGroups: WargearOptionGroup[] = [];
+  const segContainers = directChildren(el, 'selectionEntryGroups', ns);
+  for (const segContainer of segContainers) {
+    for (const grpEl of directChildren(segContainer, 'selectionEntryGroup', ns)) {
+      const groupName = decodeHtmlEntities(grpEl.getAttribute('name') ?? '');
+      if (groupName !== 'Wargear Options') continue;
+      const groupId = grpEl.getAttribute('id') ?? '';
+      const options: WargearOption[] = [];
+      const optContainers = directChildren(grpEl, 'selectionEntries', ns);
+      for (const optContainer of optContainers) {
+        for (const optEl of directChildren(optContainer, 'selectionEntry', ns)) {
+          const optId = optEl.getAttribute('id') ?? '';
+          const optName = decodeHtmlEntities(optEl.getAttribute('name') ?? '');
+          // Collect profiles from the option and its nested sub-entries (weapon definitions live one level down)
+          const optProfiles = collectProfilesFromXmlElement(optEl, ns);
+          options.push({ id: optId, name: optName, profiles: optProfiles });
+        }
+      }
+      if (options.length > 0) {
+        wargearGroups.push({ id: groupId, name: groupName, options });
+      }
+    }
+  }
+
   return {
     id: el.getAttribute('id') ?? '',
     name: decodeHtmlEntities(el.getAttribute('name') ?? ''),
@@ -311,7 +338,23 @@ function parseSelectionEntry(el: Element, ns: string): SelectionEntry {
     costs,
     categoryLinks,
     subEntries,
+    wargearGroups,
   };
+}
+
+/**
+ * Recursively collect all profiles from an XML element and its selectionEntries children.
+ * Used to gather weapon profiles from wargear option entries (which may be nested one level).
+ */
+function collectProfilesFromXmlElement(el: Element, ns: string): Profile[] {
+  const profiles = parseProfiles(el, ns);
+  const subContainers = directChildren(el, 'selectionEntries', ns);
+  for (const container of subContainers) {
+    for (const sub of directChildren(container, 'selectionEntry', ns)) {
+      profiles.push(...collectProfilesFromXmlElement(sub, ns));
+    }
+  }
+  return profiles;
 }
 
 function parseSharedSelectionEntryGroups(parent: Element, ns: string): FactionOptionGroup[] {
@@ -324,62 +367,75 @@ function parseSharedSelectionEntryGroups(parent: Element, ns: string): FactionOp
       const groupId = grpEl.getAttribute('id') ?? '';
       const options: FactionOption[] = [];
 
-      // Get direct selectionEntries within this group
-      const seContainers = directChildren(grpEl, 'selectionEntries', ns);
-      for (const seContainer of seContainers) {
-        for (const entryEl of directChildren(seContainer, 'selectionEntry', ns)) {
-          const profiles = parseProfiles(entryEl, ns);
-          const hidden = entryEl.getAttribute('hidden') === 'true';
+      // Helper: parse a single selectionEntry as a FactionOption
+      function parseFactionOption(entryEl: Element): FactionOption {
+        const profiles = parseProfiles(entryEl, ns);
+        const hidden = entryEl.getAttribute('hidden') === 'true';
+        const costs = parseCosts(entryEl, ns);
+        const points = costs.find((c) => c.name === 'pts')?.value ?? 0;
 
-          // Parse base points cost
-          const costs = parseCosts(entryEl, ns);
-          const points = costs.find((c) => c.name === 'pts')?.value ?? 0;
-
-          // Check for an entryLink targetId (used by lore options referencing Lores.cat groups)
-          let targetGroupId: string | undefined;
-          const elContainers = directChildren(entryEl, 'entryLinks', ns);
-          for (const elc of elContainers) {
-            const firstLink = directChildren(elc, 'entryLink', ns)[0];
-            if (firstLink) {
-              targetGroupId = firstLink.getAttribute('targetId') ?? undefined;
-            }
+        let targetGroupId: string | undefined;
+        const elContainers = directChildren(entryEl, 'entryLinks', ns);
+        for (const elc of elContainers) {
+          const firstLink = directChildren(elc, 'entryLink', ns)[0];
+          if (firstLink) {
+            targetGroupId = firstLink.getAttribute('targetId') ?? undefined;
           }
+        }
 
-          // If this entry is hidden, check for un-hide modifiers conditioned on force entry IDs.
-          // This handles battle formations that are only available in specific GHB seasons.
-          const conditionalForceIds: string[] = [];
-          if (hidden) {
-            const forceIdSet = new Set<string>();
-            const modContainers = directChildren(entryEl, 'modifiers', ns);
-            for (const mc of modContainers) {
-              for (const mod of directChildren(mc, 'modifier', ns)) {
-                if (
-                  mod.getAttribute('type') === 'set' &&
-                  mod.getAttribute('field') === 'hidden' &&
-                  mod.getAttribute('value') === 'false'
-                ) {
-                  // This modifier un-hides the entry – collect all childIds from its conditions
-                  for (const cond of Array.from(mod.getElementsByTagNameNS(ns, 'condition'))) {
-                    if (cond.getAttribute('type') === 'instanceOf') {
-                      const childId = cond.getAttribute('childId');
-                      if (childId) forceIdSet.add(childId);
-                    }
+        const conditionalForceIds: string[] = [];
+        if (hidden) {
+          const forceIdSet = new Set<string>();
+          const modContainers = directChildren(entryEl, 'modifiers', ns);
+          for (const mc of modContainers) {
+            for (const mod of directChildren(mc, 'modifier', ns)) {
+              if (
+                mod.getAttribute('type') === 'set' &&
+                mod.getAttribute('field') === 'hidden' &&
+                mod.getAttribute('value') === 'false'
+              ) {
+                for (const cond of Array.from(mod.getElementsByTagNameNS(ns, 'condition'))) {
+                  if (cond.getAttribute('type') === 'instanceOf') {
+                    const childId = cond.getAttribute('childId');
+                    if (childId) forceIdSet.add(childId);
                   }
                 }
               }
             }
-            conditionalForceIds.push(...forceIdSet);
           }
+          conditionalForceIds.push(...forceIdSet);
+        }
 
-          options.push({
-            id: entryEl.getAttribute('id') ?? '',
-            name: decodeHtmlEntities(entryEl.getAttribute('name') ?? ''),
-            points,
-            profiles,
-            hidden,
-            targetGroupId,
-            conditionalForceIds,
-          });
+        return {
+          id: entryEl.getAttribute('id') ?? '',
+          name: decodeHtmlEntities(entryEl.getAttribute('name') ?? ''),
+          points,
+          profiles,
+          hidden,
+          targetGroupId,
+          conditionalForceIds,
+        };
+      }
+
+      // Get direct selectionEntries within this group
+      const seContainers = directChildren(grpEl, 'selectionEntries', ns);
+      for (const seContainer of seContainers) {
+        for (const entryEl of directChildren(seContainer, 'selectionEntry', ns)) {
+          options.push(parseFactionOption(entryEl));
+        }
+      }
+
+      // Also collect from nested selectionEntryGroups (used by enhancement groups like
+      // "Heroic Traits", "Artefacts of Power", "Big Names" which have sub-groups per faction).
+      const nestedGrpContainers = directChildren(grpEl, 'selectionEntryGroups', ns);
+      for (const nestedContainer of nestedGrpContainers) {
+        for (const nestedGrpEl of directChildren(nestedContainer, 'selectionEntryGroup', ns)) {
+          const nestedSeContainers = directChildren(nestedGrpEl, 'selectionEntries', ns);
+          for (const seContainer of nestedSeContainers) {
+            for (const entryEl of directChildren(seContainer, 'selectionEntry', ns)) {
+              options.push(parseFactionOption(entryEl));
+            }
+          }
         }
       }
 
@@ -453,6 +509,21 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
         }
       }
 
+      // Parse nested entryLinks that reference enhancement selectionEntryGroups
+      // (e.g. "Heroic Traits", "Artefacts of Power", "Big Names" on hero units).
+      const ENHANCEMENT_NAMES = new Set(['Heroic Traits', 'Artefacts of Power', 'Big Names']);
+      const enhancementGroupRefs: { name: string; targetId: string }[] = [];
+      const innerElContainers = directChildren(el, 'entryLinks', ns);
+      for (const innerElc of innerElContainers) {
+        for (const innerEl of directChildren(innerElc, 'entryLink', ns)) {
+          if (innerEl.getAttribute('type') !== 'selectionEntryGroup') continue;
+          const innerName = decodeHtmlEntities(innerEl.getAttribute('name') ?? '');
+          if (!ENHANCEMENT_NAMES.has(innerName)) continue;
+          const innerTargetId = innerEl.getAttribute('targetId') ?? '';
+          if (innerTargetId) enhancementGroupRefs.push({ name: innerName, targetId: innerTargetId });
+        }
+      }
+
       links.push({
         id: el.getAttribute('id') ?? '',
         name: decodeHtmlEntities(el.getAttribute('name') ?? ''),
@@ -464,6 +535,7 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
         isRegimentalLeader,
         enabledAffectIds,
         conditionalCategoryIds,
+        enhancementGroupRefs,
       });
     }
   }

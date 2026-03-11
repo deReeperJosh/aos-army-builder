@@ -214,3 +214,29 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+/* ---- Selected wargear / enhancement summary in unit cards ---- */
+.unit-upgrade-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.unit-upgrade-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--color-accent, #9b59b6);
+  border-radius: 3px;
+  color: var(--color-accent, #9b59b6);
+  background: var(--color-accent-bg, rgba(155, 89, 182, 0.08));
+}
+
+.unit-enhancement-tag {
+  border-color: var(--color-gold, #d4a017);
+  color: var(--color-gold, #d4a017);
+  background: rgba(212, 160, 23, 0.08);
+}

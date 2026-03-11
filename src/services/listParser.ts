@@ -3,6 +3,8 @@
 export interface ParsedUnit {
   name: string;
   points: number;
+  /** Bullet-point upgrade lines listed under this unit (e.g. "Blood Vulture", "Elixir of the Frostwyrm"). */
+  upgrades: string[];
 }
 
 export interface ParsedRegiment {
@@ -111,7 +113,7 @@ function parseUnitLine(line: string): ParsedUnit | null {
   if (!m) return null;
   const points = parseInt(m[2], 10);
   if (isNaN(points)) return null;
-  return { name: m[1].trim(), points };
+  return { name: m[1].trim(), points, upgrades: [] };
 }
 
 /**
@@ -184,14 +186,22 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
   type Section = 'regiment' | 'auxiliary' | 'terrain' | null;
   let section: Section = null;
   let currentRegiment: ParsedRegiment | null = null;
+  /** The last unit added (to associate subsequent bullet-point lines with it). */
+  let lastUnit: ParsedUnit | null = null;
 
   while (i < lines.length) {
     const line = lines[i++];
 
     if (isEndMarker(line)) break;
 
-    // Skip bullet-point sub-options (equipment, abilities, etc.)
-    if (line.startsWith('•')) continue;
+    // Bullet-point sub-options (wargear, enhancements, "General", etc.) – associate with last unit
+    if (line.startsWith('•')) {
+      if (lastUnit) {
+        const upgradeText = line.replace(/^•\s*/, '').trim();
+        if (upgradeText) lastUnit.upgrades.push(upgradeText);
+      }
+      continue;
+    }
 
     // Lore / formation selections
     const lore = parseLoreLine(line);
@@ -202,6 +212,7 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
         case 'manifestation': manifestationLoreName = lore.name; break;
         case 'formation': battleFormationName = lore.name; break;
       }
+      lastUnit = null;
       continue;
     }
 
@@ -215,24 +226,28 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
       };
       regiments.push(currentRegiment);
       section = 'regiment';
+      lastUnit = null;
       continue;
     }
 
     if (isAuxiliaryHeader(line)) {
       section = 'auxiliary';
       currentRegiment = null;
+      lastUnit = null;
       continue;
     }
 
     if (isFactionTerrainHeader(line)) {
       section = 'terrain';
       currentRegiment = null;
+      lastUnit = null;
       continue;
     }
 
     // Unit line
     const unit = parseUnitLine(line);
     if (unit) {
+      lastUnit = unit;
       if (section === 'regiment' && currentRegiment) {
         currentRegiment.units.push(unit);
       } else if (section === 'auxiliary') {
@@ -242,6 +257,7 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
     } else if (section === 'terrain' && factionTerrainName === null && line.length > 0) {
       // Faction terrain units often have no points cost — accept a plain name line
       factionTerrainName = line;
+      lastUnit = null;
     }
   }
 
