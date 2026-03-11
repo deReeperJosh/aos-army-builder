@@ -9,7 +9,7 @@ import './ProfileViewer.css';
  * - ^^text^^     → <strong> (keyword reference)
  * - **text**     → <strong> (bold keyword)
  */
-function parseKeywords(text: string): ReactNode {
+export function parseKeywords(text: string): ReactNode {
   const parts: ReactNode[] = [];
   const KEYWORD_REGEX = /\*\*\^\^(.*?)\^\^\*\*|\^\^(.*?)\^\^|\*\*(.*?)\*\*/g;
   let lastIndex = 0;

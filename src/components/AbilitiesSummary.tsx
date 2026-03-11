@@ -1,4 +1,5 @@
 import type { ArmyList, Profile } from '../types/battlescribe';
+import { parseKeywords } from './ProfileViewer';
 import './AbilitiesSummary.css';
 
 interface AbilitiesSummaryProps {
@@ -295,11 +296,11 @@ function AbilityCard({
         <span className="ability-unit">{unitName}</span>
       </div>
       {showTiming && timing && (
-        <div className="ability-timing">{timing}</div>
+        <div className="ability-timing">{parseKeywords(timing)}</div>
       )}
       {cost && <div className="ability-meta">Cost: {cost}</div>}
-      {declare && <div className="ability-declare"><strong>Declare:</strong> {declare}</div>}
-      {effect && <div className="ability-effect">{effect}</div>}
+      {declare && <div className="ability-declare"><strong>Declare:</strong> {parseKeywords(declare)}</div>}
+      {effect && <div className="ability-effect">{parseKeywords(effect)}</div>}
       {keywords && (
         <div className="ability-keywords">
           {keywords.split(',').map((kw) => (
