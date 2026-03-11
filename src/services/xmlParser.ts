@@ -161,11 +161,15 @@ export function parseCatalogue(
   );
   const battleTraitProfiles = battleTraitsEntry?.profiles ?? [];
 
-  // Extract Battle Formations (from the 'Battle Formations: X' shared group)
+  // Extract Battle Formations (from the 'Battle Formations: X' shared group).
+  // Include both always-visible (hidden=false) and conditionally-visible formations
+  // (hidden=true with force-specific un-hide modifiers captured in conditionalForceIds).
   const formationGroup = selectionEntryGroups.find((g) =>
     g.name.startsWith('Battle Formations:')
   );
-  const battleFormations = formationGroup?.options.filter((o) => !o.hidden) ?? [];
+  const battleFormations = formationGroup?.options.filter(
+    (o) => !o.hidden || o.conditionalForceIds.length > 0
+  ) ?? [];
 
   // Extract Spell Lore options
   const spellLoreGroup = selectionEntryGroups.find((g) => g.name === 'Spell Lores');
@@ -327,6 +331,10 @@ function parseSharedSelectionEntryGroups(parent: Element, ns: string): FactionOp
           const profiles = parseProfiles(entryEl, ns);
           const hidden = entryEl.getAttribute('hidden') === 'true';
 
+          // Parse base points cost
+          const costs = parseCosts(entryEl, ns);
+          const points = costs.find((c) => c.name === 'pts')?.value ?? 0;
+
           // Check for an entryLink targetId (used by lore options referencing Lores.cat groups)
           let targetGroupId: string | undefined;
           const elContainers = directChildren(entryEl, 'entryLinks', ns);
@@ -337,12 +345,40 @@ function parseSharedSelectionEntryGroups(parent: Element, ns: string): FactionOp
             }
           }
 
+          // If this entry is hidden, check for un-hide modifiers conditioned on force entry IDs.
+          // This handles battle formations that are only available in specific GHB seasons.
+          const conditionalForceIds: string[] = [];
+          if (hidden) {
+            const forceIdSet = new Set<string>();
+            const modContainers = directChildren(entryEl, 'modifiers', ns);
+            for (const mc of modContainers) {
+              for (const mod of directChildren(mc, 'modifier', ns)) {
+                if (
+                  mod.getAttribute('type') === 'set' &&
+                  mod.getAttribute('field') === 'hidden' &&
+                  mod.getAttribute('value') === 'false'
+                ) {
+                  // This modifier un-hides the entry – collect all childIds from its conditions
+                  for (const cond of Array.from(mod.getElementsByTagNameNS(ns, 'condition'))) {
+                    if (cond.getAttribute('type') === 'instanceOf') {
+                      const childId = cond.getAttribute('childId');
+                      if (childId) forceIdSet.add(childId);
+                    }
+                  }
+                }
+              }
+            }
+            conditionalForceIds.push(...forceIdSet);
+          }
+
           options.push({
             id: entryEl.getAttribute('id') ?? '',
             name: decodeHtmlEntities(entryEl.getAttribute('name') ?? ''),
+            points,
             profiles,
             hidden,
             targetGroupId,
+            conditionalForceIds,
           });
         }
       }

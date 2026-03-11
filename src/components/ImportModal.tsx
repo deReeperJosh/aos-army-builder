@@ -33,6 +33,9 @@ const infraPatterns = [
   'Configuration', 'Army List', 'Allegiance',
 ];
 
+// BattleScribe category ID for FACTION TERRAIN units (mirrors BuildTab)
+const FACTION_TERRAIN_CAT_ID = 'cdd6-ffa1-9b32-4cb8';
+
 function buildUnitOptions(
   factionCat: Awaited<ReturnType<typeof fetchCatalogue>>,
   subfactionCat: Awaited<ReturnType<typeof fetchCatalogue>> | null,
@@ -385,7 +388,18 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
     pointsLimit: parsed.pointsLimit,
     regiments,
     auxiliaryUnits,
-    factionTerrainUnit: null,
+    factionTerrainUnit: (() => {
+      if (!parsed.factionTerrainName) return null;
+      const terrainOptions = allUnitOptions.filter((u) =>
+        u.categoryLinks.some((cl) => cl.targetId === FACTION_TERRAIN_CAT_ID)
+      );
+      const opt = findUnit(parsed.factionTerrainName, terrainOptions);
+      if (!opt) {
+        warnings.push(`Faction terrain "${parsed.factionTerrainName}" not found. Please set it manually.`);
+        return null;
+      }
+      return makeArmyUnit(opt);
+    })(),
     generalUnitId,
     battleTraitProfiles,
     battleFormation,
@@ -528,6 +542,9 @@ export function ImportModal({ onImport, onClose }: ImportModalProps) {
                           )}
                         </td>
                       </tr>
+                      {preview.factionTerrainName && (
+                        <tr><td>Faction Terrain</td><td><strong>{preview.factionTerrainName}</strong></td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>

@@ -3,9 +3,16 @@
 export interface FactionOption {
   id: string;
   name: string;
+  /** Base points cost (ignoring force-specific modifier overrides). */
+  points: number;
   profiles: Profile[];
   targetGroupId?: string; // For lores: references a group in Lores.cat
   hidden: boolean;
+  /**
+   * Force entry IDs (from the GST) whose selection makes this otherwise-hidden option visible.
+   * Populated from XML modifiers that set hidden=false conditioned on a specific force entry.
+   */
+  conditionalForceIds: string[];
 }
 
 export interface FactionOptionGroup {

@@ -76,6 +76,11 @@ function groupByUnitType(units: UnitOption[]): { label: string; units: UnitOptio
 
 type EditMode = 'leader' | 'units' | 'auxiliary' | 'terrain' | 'renown' | null;
 
+type SelectedDetail =
+  | { type: 'unit'; unit: ArmyUnit }
+  | { type: 'option'; option: FactionOption; label: string }
+  | null;
+
 interface BuildTabProps {
   army: ArmyList;
   onUpdateArmy: (updates: Partial<ArmyList>) => void;
@@ -93,6 +98,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   const [search, setSearch] = useState('');
   const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
   const [showArmyOptions, setShowArmyOptions] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<SelectedDetail>(null);
 
   const loadedRef = useRef<string | null>(null);
 
@@ -319,6 +325,13 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     .filter((r) => r.leader !== null)
     .map((r) => r.leader!);
 
+  // ---- Unit selection (detail panel) ----
+  const handleSelectUnit = (unit: ArmyUnit) => {
+    setSelectedDetail({ type: 'unit', unit });
+  };
+
+  const selectedDetailId = selectedDetail?.type === 'unit' ? selectedDetail.unit.id : null;
+
   // ---- Army mutation helpers ----
 
   const addRegiment = () => {
@@ -508,6 +521,15 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     }
   };
 
+  // ---- Visible battle formations (filter hidden ones by force entry) ----
+  // Some formations are hidden by default but conditionally shown for specific forces
+  // (e.g. GHB 2025-26 adds extra formations). Include them when the army's force matches.
+  const visibleBattleFormations = (factionCat?.battleFormations ?? []).filter(
+    (f) =>
+      !f.hidden ||
+      (army.forceEntry && f.conditionalForceIds.includes(army.forceEntry.id))
+  );
+
   // ---- Total points ----
   const totalPoints =
     army.regiments.reduce((sum, r) => {
@@ -518,7 +540,11 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       );
     }, 0) +
     army.auxiliaryUnits.reduce((sum, u) => sum + u.pointsCost, 0) +
-    (army.factionTerrainUnit?.pointsCost ?? 0);
+    (army.factionTerrainUnit?.pointsCost ?? 0) +
+    (army.battleFormation?.points ?? 0) +
+    (army.spellLore?.points ?? 0) +
+    (army.prayerLore?.points ?? 0) +
+    (army.manifestationLore?.points ?? 0);
 
   const pointsOver = totalPoints > army.pointsLimit && army.pointsLimit > 0;
 
@@ -568,7 +594,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                 </div>
 
                 {/* Battle Formation */}
-                {factionCat.battleFormations.length > 0 && (
+                {visibleBattleFormations.length > 0 && (
                   <div className="army-option-row">
                     <label className="army-option-label">🏛️ Battle Formation</label>
                     <select
@@ -577,10 +603,19 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                       onChange={(e) => handleSelectFormation(e.target.value)}
                     >
                       <option value="">— None —</option>
-                      {factionCat.battleFormations.map((f) => (
+                      {visibleBattleFormations.map((f) => (
                         <option key={f.id} value={f.id}>{f.name}</option>
                       ))}
                     </select>
+                    {army.battleFormation && (
+                      <button
+                        className="btn btn-xs option-view-btn"
+                        title="View formation details"
+                        onClick={() => setSelectedDetail({ type: 'option', option: army.battleFormation!, label: army.battleFormation!.name })}
+                      >
+                        👁
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -595,9 +630,20 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     >
                       <option value="">— None —</option>
                       {factionCat.spellLores.map((l) => (
-                        <option key={l.id} value={l.id}>{l.name}</option>
+                        <option key={l.id} value={l.id}>
+                          {l.name}{l.points > 0 ? ` (${l.points} pts)` : ''}
+                        </option>
                       ))}
                     </select>
+                    {army.spellLore && (
+                      <button
+                        className="btn btn-xs option-view-btn"
+                        title="View lore details"
+                        onClick={() => setSelectedDetail({ type: 'option', option: army.spellLore!, label: army.spellLore!.name })}
+                      >
+                        👁
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -612,9 +658,20 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     >
                       <option value="">— None —</option>
                       {factionCat.prayerLores.map((l) => (
-                        <option key={l.id} value={l.id}>{l.name}</option>
+                        <option key={l.id} value={l.id}>
+                          {l.name}{l.points > 0 ? ` (${l.points} pts)` : ''}
+                        </option>
                       ))}
                     </select>
+                    {army.prayerLore && (
+                      <button
+                        className="btn btn-xs option-view-btn"
+                        title="View lore details"
+                        onClick={() => setSelectedDetail({ type: 'option', option: army.prayerLore!, label: army.prayerLore!.name })}
+                      >
+                        👁
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -629,9 +686,20 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     >
                       <option value="">— None —</option>
                       {availableManifestationLores.map((l) => (
-                        <option key={l.id} value={l.id}>{l.name}</option>
+                        <option key={l.id} value={l.id}>
+                          {l.name}{l.points > 0 ? ` (${l.points} pts)` : ''}
+                        </option>
                       ))}
                     </select>
+                    {army.manifestationLore && (
+                      <button
+                        className="btn btn-xs option-view-btn"
+                        title="View lore details"
+                        onClick={() => setSelectedDetail({ type: 'option', option: army.manifestationLore!, label: army.manifestationLore!.name })}
+                      >
+                        👁
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -645,6 +713,11 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                         {army.factionTerrainUnit.pointsCost > 0 && (
                           <span className="terrain-pts">{army.factionTerrainUnit.pointsCost} pts</span>
                         )}
+                        <button
+                          className="btn btn-xs option-view-btn"
+                          title="View terrain details"
+                          onClick={() => setSelectedDetail({ type: 'unit', unit: army.factionTerrainUnit! })}
+                        >👁</button>
                         <button
                           className="btn btn-xs btn-danger"
                           onClick={() => onUpdateArmy({ factionTerrainUnit: null })}
@@ -678,6 +751,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
               army={army}
               editMode={editMode}
               editRegimentId={editRegimentId}
+              selectedDetailId={selectedDetailId}
               onAddRegiment={addRegiment}
               onStartPickRenown={startPickRenown}
               onRemoveRegiment={removeRegiment}
@@ -688,27 +762,26 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
               onStartPickUnits={startPickUnits}
               onStartPickAux={startPickAuxiliary}
               onCancelPick={cancelPick}
+              onSelectUnit={handleSelectUnit}
             />
           ) : (
             <FlatStructure
               army={army}
               editMode={editMode}
+              selectedDetailId={selectedDetailId}
               onRemoveAux={removeAuxiliaryUnit}
               onStartPickAux={startPickAuxiliary}
               onCancelPick={cancelPick}
+              onSelectUnit={handleSelectUnit}
             />
           )}
         </div>
       </div>
 
-      {/* Right: Unit Picker */}
+      {/* Right: Unit Picker / Detail Panel */}
       <div className="build-right">
-        {editMode === null ? (
-          <div className="build-picker-idle">
-            <div className="build-picker-idle-icon">⚔</div>
-            <p>Select an action on the left to add units to your army.</p>
-          </div>
-        ) : editMode === 'renown' ? (
+        {editMode !== null ? (
+          editMode === 'renown' ? (
           <div className="build-picker">
             <div className="build-picker-header">
               <span className="build-picker-title">Pick a Regiment of Renown</span>
@@ -808,6 +881,47 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
               )}
             </div>
           </div>
+        )
+        ) : selectedDetail !== null ? (
+          <div className="build-detail">
+            <div className="build-detail-header">
+              <span className="build-detail-title">
+                {selectedDetail.type === 'unit'
+                  ? selectedDetail.unit.name
+                  : selectedDetail.label}
+              </span>
+              {selectedDetail.type === 'unit' && selectedDetail.unit.pointsCost > 0 && (
+                <span className="build-detail-pts">{selectedDetail.unit.pointsCost} pts</span>
+              )}
+              <button
+                className="btn btn-sm"
+                onClick={() => setSelectedDetail(null)}
+                title="Close details"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="build-detail-body">
+              {selectedDetail.type === 'unit' ? (
+                selectedDetail.unit.profiles.length > 0 ? (
+                  <ProfileViewer profiles={selectedDetail.unit.profiles} />
+                ) : (
+                  <p className="build-detail-empty">No profile data available for this unit.</p>
+                )
+              ) : (
+                selectedDetail.option.profiles.length > 0 ? (
+                  <ProfileViewer profiles={selectedDetail.option.profiles} />
+                ) : (
+                  <p className="build-detail-empty">No profile data available.</p>
+                )
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="build-picker-idle">
+            <div className="build-picker-idle-icon">⚔</div>
+            <p>Select a unit or army option to view its details, or choose an action to add units.</p>
+          </div>
         )}
       </div>
     </div>
@@ -873,6 +987,7 @@ interface GHBStructureProps {
   army: ArmyList;
   editMode: EditMode;
   editRegimentId: string | null;
+  selectedDetailId: string | null;
   onAddRegiment: () => void;
   onStartPickRenown: () => void;
   onRemoveRegiment: (id: string) => void;
@@ -883,12 +998,14 @@ interface GHBStructureProps {
   onStartPickUnits: (regimentId: string) => void;
   onStartPickAux: () => void;
   onCancelPick: () => void;
+  onSelectUnit: (unit: ArmyUnit) => void;
 }
 
 function GHBStructure({
   army,
   editMode,
   editRegimentId,
+  selectedDetailId,
   onAddRegiment,
   onStartPickRenown,
   onRemoveRegiment,
@@ -899,6 +1016,7 @@ function GHBStructure({
   onStartPickUnits,
   onStartPickAux,
   onCancelPick,
+  onSelectUnit,
 }: GHBStructureProps) {
   return (
     <div className="ghb-structure">
@@ -931,7 +1049,10 @@ function GHBStructure({
           <div className="regiment-section">
             <span className="regiment-section-label">Leader</span>
             {regiment.leader ? (
-              <div className="regiment-unit-row">
+              <div
+                className={`regiment-unit-row selectable${selectedDetailId === regiment.leader.id ? ' unit-selected' : ''}`}
+                onClick={() => onSelectUnit(regiment.leader!)}
+              >
                 <span className="regiment-unit-name leader-name">
                   ⭐ {regiment.leader.name}
                 </span>
@@ -940,7 +1061,7 @@ function GHBStructure({
                 )}
                 <button
                   className="btn btn-xs btn-danger"
-                  onClick={() => onRemoveLeader(regiment.id)}
+                  onClick={(e) => { e.stopPropagation(); onRemoveLeader(regiment.id); }}
                 >
                   ✕
                 </button>
@@ -969,14 +1090,18 @@ function GHBStructure({
           <div className="regiment-section">
             <span className="regiment-section-label">Units</span>
             {regiment.units.map((unit) => (
-              <div key={unit.id} className="regiment-unit-row">
+              <div
+                key={unit.id}
+                className={`regiment-unit-row selectable${selectedDetailId === unit.id ? ' unit-selected' : ''}`}
+                onClick={() => onSelectUnit(unit)}
+              >
                 <span className="regiment-unit-name">{unit.name}</span>
                 {unit.pointsCost > 0 && (
                   <span className="regiment-unit-pts">{unit.pointsCost} pts</span>
                 )}
                 <button
                   className="btn btn-xs btn-danger"
-                  onClick={() => onRemoveUnit(regiment.id, unit.id)}
+                  onClick={(e) => { e.stopPropagation(); onRemoveUnit(regiment.id, unit.id); }}
                 >
                   ✕
                 </button>
@@ -1020,14 +1145,18 @@ function GHBStructure({
           <span className="regiment-title">Auxiliary Units</span>
         </div>
         {army.auxiliaryUnits.map((unit) => (
-          <div key={unit.id} className="regiment-unit-row">
+          <div
+            key={unit.id}
+            className={`regiment-unit-row selectable${selectedDetailId === unit.id ? ' unit-selected' : ''}`}
+            onClick={() => onSelectUnit(unit)}
+          >
             <span className="regiment-unit-name">{unit.name}</span>
             {unit.pointsCost > 0 && (
               <span className="regiment-unit-pts">{unit.pointsCost} pts</span>
             )}
             <button
               className="btn btn-xs btn-danger"
-              onClick={() => onRemoveAux(unit.id)}
+              onClick={(e) => { e.stopPropagation(); onRemoveAux(unit.id); }}
             >
               ✕
             </button>
@@ -1057,17 +1186,21 @@ function GHBStructure({
 interface FlatStructureProps {
   army: ArmyList;
   editMode: EditMode;
+  selectedDetailId: string | null;
   onRemoveAux: (unitId: string) => void;
   onStartPickAux: () => void;
   onCancelPick: () => void;
+  onSelectUnit: (unit: ArmyUnit) => void;
 }
 
 function FlatStructure({
   army,
   editMode,
+  selectedDetailId,
   onRemoveAux,
   onStartPickAux,
   onCancelPick,
+  onSelectUnit,
 }: FlatStructureProps) {
   const allUnits = [
     ...army.regiments.flatMap((r) => [
@@ -1083,14 +1216,18 @@ function FlatStructure({
         <span className="regiment-title">Units</span>
       </div>
       {allUnits.map((unit) => (
-        <div key={unit.id} className="regiment-unit-row">
+        <div
+          key={unit.id}
+          className={`regiment-unit-row selectable${selectedDetailId === unit.id ? ' unit-selected' : ''}`}
+          onClick={() => onSelectUnit(unit)}
+        >
           <span className="regiment-unit-name">{unit.name}</span>
           {unit.pointsCost > 0 && (
             <span className="regiment-unit-pts">{unit.pointsCost} pts</span>
           )}
           <button
             className="btn btn-xs btn-danger"
-            onClick={() => onRemoveAux(unit.id)}
+            onClick={(e) => { e.stopPropagation(); onRemoveAux(unit.id); }}
           >
             ✕
           </button>

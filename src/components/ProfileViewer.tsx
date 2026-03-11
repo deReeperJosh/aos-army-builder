@@ -1,5 +1,35 @@
+import { type ReactNode } from 'react';
 import type { Profile } from '../types/battlescribe';
 import './ProfileViewer.css';
+
+/**
+ * Parses AoS keyword formatting in text and returns React nodes with bold elements.
+ *
+ * - **^^text^^** → <strong> (bold keyword reference)
+ * - ^^text^^     → <strong> (keyword reference)
+ * - **text**     → <strong> (bold keyword)
+ */
+export function parseKeywords(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  const KEYWORD_REGEX = /\*\*\^\^(.*?)\^\^\*\*|\^\^(.*?)\^\^|\*\*(.*?)\*\*/g;
+  let lastIndex = 0;
+  let key = 0;
+
+  for (const match of text.matchAll(KEYWORD_REGEX)) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const content = match[1] ?? match[2] ?? match[3];
+    parts.push(<strong key={key++}>{content}</strong>);
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length === 0 ? text : parts;
+}
 
 interface ProfileViewerProps {
   profiles: Profile[];
@@ -77,7 +107,7 @@ function ProfileGroup({ typeName, profiles }: { typeName: string; profiles: Prof
               <td className="profile-name-cell">{profile.name}</td>
               {profile.characteristics.map((char) => (
                 <td key={char.typeId} className="profile-char-cell">
-                  {char.value || '-'}
+                  {char.value ? parseKeywords(char.value) : '-'}
                 </td>
               ))}
             </tr>
