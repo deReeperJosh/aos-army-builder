@@ -5,7 +5,8 @@ import './ArmyRoster.css';
 interface ArmyRosterProps {
   army: ArmyList;
   totalPoints: number;
-  onRemoveUnit: (unitId: string) => void;
+  onRemoveUnit: (unitId: string, regimentId?: string) => void;
+  onRemoveAux: (unitId: string) => void;
   onUpdateName: (name: string) => void;
   onUpdatePoints: (points: number) => void;
 }
@@ -14,12 +15,19 @@ export function ArmyRoster({
   army,
   totalPoints,
   onRemoveUnit,
+  onRemoveAux,
   onUpdateName,
   onUpdatePoints,
 }: ArmyRosterProps) {
   const pointsOver = totalPoints > army.pointsLimit && army.pointsLimit > 0;
   const pointsPercentage =
     army.pointsLimit > 0 ? Math.min((totalPoints / army.pointsLimit) * 100, 100) : 0;
+
+  const totalUnitCount =
+    army.regiments.reduce(
+      (sum, r) => sum + (r.leader ? 1 : 0) + r.units.length,
+      0
+    ) + army.auxiliaryUnits.length;
 
   return (
     <div className="army-roster">
@@ -81,38 +89,102 @@ export function ArmyRoster({
       </div>
 
       <div className="unit-roster">
-        {army.units.length === 0 ? (
+        {totalUnitCount === 0 ? (
           <div className="roster-empty">
             <p>No units added yet.</p>
-            <p className="roster-empty-hint">Use the Unit Browser to add units to your army.</p>
+            <p className="roster-empty-hint">Use the Build Army tab to add units.</p>
           </div>
         ) : (
           <div className="roster-units">
-            {army.units.map((unit) => (
-              <div key={unit.id} className="roster-unit">
-                <div className="roster-unit-header">
-                  <span className="roster-unit-name">{unit.name}</span>
-                  <div className="roster-unit-actions">
-                    {unit.pointsCost > 0 && (
-                      <span className="roster-unit-points">{unit.pointsCost} pts</span>
-                    )}
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => onRemoveUnit(unit.id)}
-                      title="Remove unit"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
+            {army.regiments.map((regiment, idx) => (
+              <div key={regiment.id} className="roster-regiment">
+                <div className="roster-regiment-title">Regiment {idx + 1}</div>
 
-                {unit.profiles.length > 0 && (
-                  <div className="roster-unit-profiles">
-                    <ProfileViewer profiles={unit.profiles} compact />
+                {regiment.leader && (
+                  <div className="roster-unit roster-unit-leader">
+                    <div className="roster-unit-header">
+                      <span className="roster-unit-name">
+                        ⭐ {regiment.leader.name}
+                      </span>
+                      <div className="roster-unit-actions">
+                        {regiment.leader.pointsCost > 0 && (
+                          <span className="roster-unit-points">
+                            {regiment.leader.pointsCost} pts
+                          </span>
+                        )}
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => onRemoveUnit(regiment.leader!.id, regiment.id)}
+                          title="Remove leader"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    {regiment.leader.profiles.length > 0 && (
+                      <div className="roster-unit-profiles">
+                        <ProfileViewer profiles={regiment.leader.profiles} compact />
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {regiment.units.map((unit) => (
+                  <div key={unit.id} className="roster-unit">
+                    <div className="roster-unit-header">
+                      <span className="roster-unit-name">{unit.name}</span>
+                      <div className="roster-unit-actions">
+                        {unit.pointsCost > 0 && (
+                          <span className="roster-unit-points">{unit.pointsCost} pts</span>
+                        )}
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => onRemoveUnit(unit.id, regiment.id)}
+                          title="Remove unit"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    {unit.profiles.length > 0 && (
+                      <div className="roster-unit-profiles">
+                        <ProfileViewer profiles={unit.profiles} compact />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             ))}
+
+            {army.auxiliaryUnits.length > 0 && (
+              <div className="roster-regiment">
+                <div className="roster-regiment-title">Auxiliary Units</div>
+                {army.auxiliaryUnits.map((unit) => (
+                  <div key={unit.id} className="roster-unit">
+                    <div className="roster-unit-header">
+                      <span className="roster-unit-name">{unit.name}</span>
+                      <div className="roster-unit-actions">
+                        {unit.pointsCost > 0 && (
+                          <span className="roster-unit-points">{unit.pointsCost} pts</span>
+                        )}
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => onRemoveAux(unit.id)}
+                          title="Remove unit"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    {unit.profiles.length > 0 && (
+                      <div className="roster-unit-profiles">
+                        <ProfileViewer profiles={unit.profiles} compact />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

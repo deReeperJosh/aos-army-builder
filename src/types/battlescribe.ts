@@ -104,6 +104,9 @@ export interface EntryLink {
   type: string;
   hidden: boolean;
   costs: Cost[];
+  categoryLinks: CategoryLink[];
+  isRegimentalLeader: boolean;
+  enabledAffectIds: string[];
 }
 
 export interface Catalogue {
@@ -126,6 +129,16 @@ export interface ArmyUnit {
   pointsCost: number;
   profiles: Profile[];
   categoryLinks: CategoryLink[];
+  isRegimentalLeader: boolean;
+}
+
+export interface ArmyRegiment {
+  id: string;
+  leader: ArmyUnit | null;
+  units: ArmyUnit[];
+  isRegimentOfRenown: boolean;
+  renownForceEntryId?: string;
+  renownName?: string;
 }
 
 export interface ArmyForce {
@@ -142,7 +155,8 @@ export interface ArmyList {
   subfaction: Subfaction | null;
   forceEntry: ForceEntry | null;
   pointsLimit: number;
-  units: ArmyUnit[];
+  regiments: ArmyRegiment[];
+  auxiliaryUnits: ArmyUnit[];
 }
 
 export interface AppState {

@@ -2,15 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import type {
   ArmyList,
   Subfaction,
-  ArmyUnit,
   GameSystem,
-  Profile,
-  SelectionEntry,
-  EntryLink,
 } from '../types/battlescribe';
 import { KNOWN_FACTIONS, KNOWN_SUBFACTIONS, KNOWN_FORCE_ENTRIES, fetchGameSystem } from '../services/dataFetcher';
-import { UnitBrowser } from './UnitBrowser';
-import { ArmyRoster } from './ArmyRoster';
+import { BuildTab } from './BuildTab';
+import { AbilitiesSummary } from './AbilitiesSummary';
 import './ArmyBuilder.css';
 
 let nextId = 1;
@@ -26,8 +22,25 @@ function createEmptyArmy(name: string): ArmyList {
     subfaction: null,
     forceEntry: null,
     pointsLimit: 2000,
-    units: [],
+    regiments: [],
+    auxiliaryUnits: [],
   };
+}
+
+function getArmyTotalPoints(army: ArmyList): number {
+  const regimentPts = army.regiments.reduce(
+    (sum, r) =>
+      sum + (r.leader?.pointsCost ?? 0) + r.units.reduce((s, u) => s + u.pointsCost, 0),
+    0
+  );
+  return regimentPts + army.auxiliaryUnits.reduce((sum, u) => sum + u.pointsCost, 0);
+}
+
+function getArmyUnitCount(army: ArmyList): number {
+  return (
+    army.regiments.reduce((sum, r) => sum + (r.leader ? 1 : 0) + r.units.length, 0) +
+    army.auxiliaryUnits.length
+  );
 }
 
 type View = 'home' | 'builder';
@@ -75,43 +88,6 @@ export function ArmyBuilder() {
       setView('home');
     }
   };
-
-  const addUnit = useCallback(
-    (
-      _entryLink: EntryLink | null,
-      _entry: SelectionEntry | null,
-      name: string,
-      points: number,
-      profiles: Profile[]
-    ) => {
-      if (!activeArmyId) return;
-      const unit: ArmyUnit = {
-        id: generateId(),
-        entryLinkId: _entryLink?.id ?? '',
-        targetId: _entry?.id ?? '',
-        name,
-        pointsCost: points,
-        profiles,
-        categoryLinks: _entry?.categoryLinks ?? [],
-      };
-      updateArmy(activeArmyId, {
-        units: [...(activeArmy?.units ?? []), unit],
-      });
-    },
-    [activeArmyId, activeArmy, updateArmy]
-  );
-
-  const removeUnit = useCallback(
-    (unitId: string) => {
-      if (!activeArmyId || !activeArmy) return;
-      updateArmy(activeArmyId, {
-        units: activeArmy.units.filter((u) => u.id !== unitId),
-      });
-    },
-    [activeArmyId, activeArmy, updateArmy]
-  );
-
-  const totalPoints = activeArmy?.units.reduce((sum, u) => sum + u.pointsCost, 0) ?? 0;
 
   const subfactionsForFaction = activeArmy?.faction
     ? KNOWN_SUBFACTIONS.filter((sf) => sf.factionName === activeArmy.faction!.name)
@@ -164,11 +140,8 @@ export function ArmyBuilder() {
             gameSystem={gameSystem}
             gameSystemLoading={gameSystemLoading}
             gameSystemError={gameSystemError}
-            totalPoints={totalPoints}
             subfactions={subfactionsForFaction}
             onUpdateArmy={(updates) => updateArmy(activeArmy.id, updates)}
-            onAddUnit={addUnit}
-            onRemoveUnit={removeUnit}
           />
         )}
       </main>
@@ -226,9 +199,9 @@ function HomeView({ armyLists, onCreateArmy, onOpenArmy, onDeleteArmy }: HomeVie
                 </div>
                 <div className="army-card-footer">
                   <span className="army-card-points">
-                    {army.units.reduce((s, u) => s + u.pointsCost, 0)} / {army.pointsLimit} pts
+                    {getArmyTotalPoints(army)} / {army.pointsLimit} pts
                   </span>
-                  <span className="army-card-units">{army.units.length} units</span>
+                  <span className="army-card-units">{getArmyUnitCount(army)} units</span>
                 </div>
               </div>
             ))}
@@ -246,17 +219,8 @@ interface BuilderViewProps {
   gameSystem: GameSystem | null;
   gameSystemLoading: boolean;
   gameSystemError: string | null;
-  totalPoints: number;
   subfactions: Subfaction[];
   onUpdateArmy: (updates: Partial<ArmyList>) => void;
-  onAddUnit: (
-    entryLink: EntryLink | null,
-    entry: SelectionEntry | null,
-    name: string,
-    points: number,
-    profiles: Profile[]
-  ) => void;
-  onRemoveUnit: (unitId: string) => void;
 }
 
 function BuilderView({
@@ -264,15 +228,16 @@ function BuilderView({
   gameSystem,
   gameSystemLoading,
   gameSystemError,
-  totalPoints,
   subfactions,
   onUpdateArmy,
-  onAddUnit,
-  onRemoveUnit,
 }: BuilderViewProps) {
-  const [activeTab, setActiveTab] = useState<'setup' | 'browse' | 'roster'>('setup');
+  const [activeTab, setActiveTab] = useState<'setup' | 'build' | 'abilities'>('setup');
 
   const isSetupComplete = !!army.faction && !!army.forceEntry;
+
+  const unitCount =
+    army.regiments.reduce((sum, r) => sum + (r.leader ? 1 : 0) + r.units.length, 0) +
+    army.auxiliaryUnits.length;
 
   return (
     <div className="builder-view">
@@ -285,19 +250,19 @@ function BuilderView({
           {!isSetupComplete && <span className="tab-badge">!</span>}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'browse' ? 'active' : ''} ${!isSetupComplete ? 'disabled' : ''}`}
-          onClick={() => isSetupComplete && setActiveTab('browse')}
+          className={`tab-btn ${activeTab === 'build' ? 'active' : ''} ${!isSetupComplete ? 'disabled' : ''}`}
+          onClick={() => isSetupComplete && setActiveTab('build')}
           disabled={!isSetupComplete}
           title={!isSetupComplete ? 'Complete setup first' : undefined}
         >
-          2. Add Units
+          2. Build Army
+          {unitCount > 0 && <span className="tab-counter">{unitCount}</span>}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'roster' ? 'active' : ''}`}
-          onClick={() => setActiveTab('roster')}
+          className={`tab-btn ${activeTab === 'abilities' ? 'active' : ''}`}
+          onClick={() => setActiveTab('abilities')}
         >
-          3. Army Roster
-          <span className="tab-counter">{army.units.length}</span>
+          3. Abilities Summary
         </button>
       </div>
 
@@ -310,28 +275,16 @@ function BuilderView({
             gameSystemError={gameSystemError}
             subfactions={subfactions}
             onUpdateArmy={onUpdateArmy}
-            onProceed={() => setActiveTab('browse')}
+            onProceed={() => setActiveTab('build')}
           />
         )}
 
-        {activeTab === 'browse' && army.faction && (
-          <UnitBrowser
-            factionFilename={army.faction.filename}
-            subfactionFilename={army.subfaction?.filename}
-            onAddUnit={(link, entry, name, pts, profiles) => {
-              onAddUnit(link, entry, name, pts, profiles);
-            }}
-          />
+        {activeTab === 'build' && army.faction && (
+          <BuildTab army={army} onUpdateArmy={onUpdateArmy} />
         )}
 
-        {activeTab === 'roster' && (
-          <ArmyRoster
-            army={army}
-            totalPoints={totalPoints}
-            onRemoveUnit={onRemoveUnit}
-            onUpdateName={(name) => onUpdateArmy({ name })}
-            onUpdatePoints={(pointsLimit) => onUpdateArmy({ pointsLimit })}
-          />
+        {activeTab === 'abilities' && (
+          <AbilitiesSummary army={army} />
         )}
       </div>
     </div>
@@ -502,7 +455,7 @@ function SetupTab({
           disabled={!isComplete}
           title={!isComplete ? 'Select a faction and force to continue' : undefined}
         >
-          Add Units →
+          Build Army →
         </button>
         {!isComplete && (
           <p className="setup-hint">Please select a Faction and Force to continue.</p>

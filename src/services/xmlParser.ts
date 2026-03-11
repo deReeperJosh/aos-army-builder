@@ -178,9 +178,52 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
   const containers = directChildren(parent, 'entryLinks', ns);
   const links: EntryLink[] = [];
 
+  const REGIMENTAL_LEADER_ID = 'd1f3-921c-b403-1106';
+  const REGIMENTAL_OPTION_ID = 'db3a-7199-c92e-f3cf';
+
   for (const container of containers) {
     for (const el of directChildren(container, 'entryLink', ns)) {
       const costs = parseCosts(el, ns);
+      const categoryLinks = parseCategoryLinks(el, ns);
+
+      // Check direct modifiers for isRegimentalLeader
+      let isRegimentalLeader = false;
+      const modContainers = directChildren(el, 'modifiers', ns);
+      for (const mc of modContainers) {
+        for (const mod of directChildren(mc, 'modifier', ns)) {
+          if (
+            mod.getAttribute('type') === 'set-primary' &&
+            mod.getAttribute('value') === REGIMENTAL_LEADER_ID
+          ) {
+            isRegimentalLeader = true;
+          }
+        }
+      }
+
+      // Check modifierGroups for enabledAffectIds (units/categories enabled as regiment options)
+      const enabledAffectIds: string[] = [];
+      const mgContainers = directChildren(el, 'modifierGroups', ns);
+      for (const mgc of mgContainers) {
+        for (const mg of directChildren(mgc, 'modifierGroup', ns)) {
+          const innerModContainers = directChildren(mg, 'modifiers', ns);
+          for (const imc of innerModContainers) {
+            for (const mod of directChildren(imc, 'modifier', ns)) {
+              const value = mod.getAttribute('value') ?? '';
+              const affects = mod.getAttribute('affects') ?? '';
+              if (
+                value === REGIMENTAL_OPTION_ID &&
+                affects.startsWith('self.entries.recursive.')
+              ) {
+                const targetId = affects.split('.').pop() ?? '';
+                if (targetId && !enabledAffectIds.includes(targetId)) {
+                  enabledAffectIds.push(targetId);
+                }
+              }
+            }
+          }
+        }
+      }
+
       links.push({
         id: el.getAttribute('id') ?? '',
         name: decodeHtmlEntities(el.getAttribute('name') ?? ''),
@@ -188,6 +231,9 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
         type: el.getAttribute('type') ?? '',
         hidden: el.getAttribute('hidden') === 'true',
         costs,
+        categoryLinks,
+        isRegimentalLeader,
+        enabledAffectIds,
       });
     }
   }
