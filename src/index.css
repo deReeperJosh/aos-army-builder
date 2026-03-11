@@ -1,0 +1,143 @@
+:root {
+  /* Dark theme */
+  --color-bg: #111827;
+  --color-surface: #1f2937;
+  --color-surface-elevated: #283447;
+  --color-surface-deep: #161d2a;
+  --color-border: #374151;
+  --color-border-light: #2d3748;
+
+  --color-text: #f3f4f6;
+  --color-text-muted: #9ca3af;
+
+  --color-accent: #f59e0b;
+  --color-accent-bg: rgba(245, 158, 11, 0.12);
+
+  --color-secondary: #60a5fa;
+  --color-secondary-bg: rgba(96, 165, 250, 0.12);
+
+  --color-success: #34d399;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-text-muted);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn.btn-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #111827;
+  font-weight: 600;
+}
+
+.btn.btn-primary:hover:not(:disabled) {
+  background: #d97706;
+  border-color: #d97706;
+}
+
+.btn.btn-danger {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-danger);
+}
+
+.btn.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: white;
+}
+
+.btn.btn-active {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.btn-lg {
+  padding: 10px 24px;
+  font-size: 1rem;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+select option {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
