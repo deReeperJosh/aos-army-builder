@@ -2,15 +2,11 @@ import type { ArmyList, ArmyUnit, Profile } from '../types/battlescribe';
 import { ProfileViewer } from './ProfileViewer';
 import './ArmySummary.css';
 
-// Unit type category IDs from the GST game system (matches BuildTab.tsx)
-const UNIT_TYPE_CATEGORIES: { id: string; label: string }[] = [
-  { id: '6e72-1656-d554-528a', label: 'Hero' },
-  { id: '75d6-6995-dfcc-3898', label: 'Infantry' },
-  { id: '926c-df8c-6841-d49e', label: 'Cavalry' },
-  { id: '6d54-625c-d063-13e2', label: 'Monster' },
-  { id: 'f7bc-b618-4b5d-2bae', label: 'War Machine' },
-  { id: 'b224-8c8e-ca93-9860', label: 'Beast' },
-];
+// Infrastructure category IDs that are app-logic only and should not be displayed as unit keywords
+const EXCLUDED_CATEGORY_IDS = new Set([
+  'd1f3-921c-b403-1106', // Regimental Leader
+  'db3a-7199-c92e-f3cf', // Regimental Option
+]);
 
 interface ArmySummaryProps {
   army: ArmyList;
@@ -151,10 +147,10 @@ function UnitCard({ unit, regimentLabel, isLeader, isGeneral }: UnitCardInfo) {
       !p.typeName.includes('Weapon')
   );
 
-  // Collect matching unit-type keywords from categoryLinks
-  const keywords = UNIT_TYPE_CATEGORIES
-    .filter((cat) => unit.categoryLinks.some((cl) => cl.targetId === cat.id))
-    .map((cat) => cat.label);
+  // Collect all unit keywords from categoryLinks, excluding infrastructure-only categories
+  const keywords = unit.categoryLinks
+    .filter((cl) => !EXCLUDED_CATEGORY_IDS.has(cl.targetId) && cl.name.length > 0)
+    .map((cl) => cl.name);
 
   return (
     <div className={`unit-card ${isLeader ? 'unit-card-leader' : ''}`}>
