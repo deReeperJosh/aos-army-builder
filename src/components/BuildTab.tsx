@@ -189,7 +189,8 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   );
 
   // ---- Regiment of Renown options: filtered to factions that can use each regiment ----
-  const factionCatalogueId = army.faction?.id ?? '';
+  // Use the loaded catalogue's XML id (e.g. '6353-cb84-ac7f-9a15') not the KNOWN_FACTIONS slug
+  const factionCatalogueId = factionCat?.id ?? '';
   const availableRenownRegiments: RenownRegiment[] = (renownCat?.renownRegiments ?? []).filter(
     (r) =>
       // If allowedCatalogueIds is empty (no restriction extracted), show to all; otherwise filter
