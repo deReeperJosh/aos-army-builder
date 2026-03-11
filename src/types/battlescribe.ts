@@ -121,6 +121,9 @@ export interface EntryLink {
   categoryLinks: CategoryLink[];
   isRegimentalLeader: boolean;
   enabledAffectIds: string[];
+  // Categories dynamically added to this unit when it joins a regiment as a non-leader
+  // (e.g. "Voice of the Everwinter" for Huskard units in an Ogor Mawtribes Frostlord regiment)
+  conditionalCategoryIds: string[];
 }
 
 export interface RenownRegiment {

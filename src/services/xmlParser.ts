@@ -360,6 +360,10 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
       // custom category IDs for specific heroes like Bloodpelt Hunter instead of the generic
       // REGIMENTAL_OPTION_ID, so filtering by value would miss them.
       const enabledAffectIds: string[] = [];
+      // Categories conditionally added to this unit itself (no `affects` attribute) inside
+      // a modifierGroup – these represent role-categories the unit acquires when placed in a
+      // regiment that already has a leader (e.g. "Voice of the Everwinter" for Huskard units).
+      const conditionalCategoryIds: string[] = [];
       const mgContainers = directChildren(el, 'modifierGroups', ns);
       for (const mgc of mgContainers) {
         for (const mg of directChildren(mgc, 'modifierGroup', ns)) {
@@ -371,6 +375,16 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
                 const targetId = affects.split('.').pop() ?? '';
                 if (targetId && !enabledAffectIds.includes(targetId)) {
                   enabledAffectIds.push(targetId);
+                }
+              } else if (
+                !affects &&
+                mod.getAttribute('type') === 'add' &&
+                mod.getAttribute('field') === 'category'
+              ) {
+                // No `affects` means "add to self" – this is a conditional role category
+                const catId = mod.getAttribute('value') ?? '';
+                if (catId && !conditionalCategoryIds.includes(catId)) {
+                  conditionalCategoryIds.push(catId);
                 }
               }
             }
@@ -388,6 +402,7 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
         categoryLinks,
         isRegimentalLeader,
         enabledAffectIds,
+        conditionalCategoryIds,
       });
     }
   }

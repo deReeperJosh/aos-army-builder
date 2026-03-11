@@ -431,7 +431,27 @@
   border-radius: 10px;
 }
 
-/* ---- Regiment of Renown ---- */
+/* ---- Unit type groups in the picker ---- */
+.picker-type-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.picker-type-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  padding: 4px 6px 2px;
+  border-bottom: 1px solid var(--color-border);
+  margin-top: 4px;
+}
+
+.picker-type-group:first-child .picker-type-header {
+  margin-top: 0;
+}
 .regiment-add-buttons {
   display: flex;
   gap: 0.5rem;

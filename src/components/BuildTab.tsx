@@ -32,6 +32,47 @@ const GHB_FORCE_IDS = new Set([
 // BattleScribe category ID for FACTION TERRAIN units
 const FACTION_TERRAIN_CAT_ID = 'cdd6-ffa1-9b32-4cb8';
 
+// Unit type categories (GST category IDs → display label), in display order
+const UNIT_TYPE_ORDER: { id: string; label: string }[] = [
+  { id: '6e72-1656-d554-528a', label: 'Hero' },
+  { id: '75d6-6995-dfcc-3898', label: 'Infantry' },
+  { id: '926c-df8c-6841-d49e', label: 'Cavalry' },
+  { id: '6d54-625c-d063-13e2', label: 'Monster' },
+  { id: 'f7bc-b618-4b5d-2bae', label: 'War Machine' },
+  { id: 'b224-8c8e-ca93-9860', label: 'Beast' },
+];
+
+const UNIT_TYPE_IDS = new Set(UNIT_TYPE_ORDER.map((t) => t.id));
+
+/** Return the display unit-type label for a UnitOption, or 'Other' if unknown. */
+function getUnitType(unit: UnitOption): string {
+  // Prefer primary category link
+  const primary = unit.categoryLinks.find((cl) => cl.primary && UNIT_TYPE_IDS.has(cl.targetId));
+  if (primary) return UNIT_TYPE_ORDER.find((t) => t.id === primary.targetId)?.label ?? 'Other';
+  // Fall back to first matching type category
+  for (const t of UNIT_TYPE_ORDER) {
+    if (unit.categoryLinks.some((cl) => cl.targetId === t.id)) return t.label;
+  }
+  return 'Other';
+}
+
+/** Group an array of UnitOptions by their unit type in canonical display order. */
+function groupByUnitType(units: UnitOption[]): { label: string; units: UnitOption[] }[] {
+  const map = new Map<string, UnitOption[]>();
+  for (const unit of units) {
+    const label = getUnitType(unit);
+    if (!map.has(label)) map.set(label, []);
+    map.get(label)!.push(unit);
+  }
+  const groups: { label: string; units: UnitOption[] }[] = [];
+  // Add groups in canonical order
+  for (const { label } of UNIT_TYPE_ORDER) {
+    if (map.has(label)) groups.push({ label, units: map.get(label)! });
+  }
+  if (map.has('Other')) groups.push({ label: 'Other', units: map.get('Other')! });
+  return groups;
+}
+
 type EditMode = 'leader' | 'units' | 'auxiliary' | 'terrain' | 'renown' | null;
 
 interface BuildTabProps {
@@ -116,11 +157,18 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
           const entry = entryMap.get(link.targetId) ?? null;
           const profiles = entry?.profiles ?? [];
           const pts = link.costs.find((c) => c.name === 'pts')?.value ?? 0;
-          // Merge categoryLinks: prefer those on entry link, fall back to entry
+          // Merge categoryLinks: link categories first (they can override primary),
+          // then append any entry categories not already present (by targetId).
+          const entryCats = entry?.categoryLinks ?? [];
           const categoryLinks =
             link.categoryLinks.length > 0
-              ? link.categoryLinks
-              : (entry?.categoryLinks ?? []);
+              ? [
+                  ...link.categoryLinks,
+                  ...entryCats.filter(
+                    (ecl) => !link.categoryLinks.some((lcl) => lcl.targetId === ecl.targetId)
+                  ),
+                ]
+              : entryCats;
 
           return {
             linkId: link.id,
@@ -132,6 +180,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
             categoryLinks,
             isRegimentalLeader: link.isRegimentalLeader,
             enabledAffectIds: link.enabledAffectIds,
+            conditionalCategoryIds: link.conditionalCategoryIds,
           };
         });
 
@@ -707,49 +756,31 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     ? 'No units available for this selection.'
                     : 'No units match your search.'}
                 </div>
-              ) : (
+              ) : editMode === 'terrain' ? (
+                // Terrain picker: no grouping needed
                 filteredPicker.map((unit) => (
-                  <div key={unit.linkId} className="build-picker-item">
-                    <div
-                      className="build-picker-item-header"
-                      onClick={() =>
-                        setExpandedUnit(expandedUnit === unit.linkId ? null : unit.linkId)
-                      }
-                    >
-                      <span className="unit-name">{unit.name}</span>
-                      <div className="unit-actions">
-                        {unit.points > 0 && (
-                          <span className="unit-points">{unit.points} pts</span>
-                        )}
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePickUnit(unit);
-                          }}
-                        >
-                          + Add
-                        </button>
-                        {unit.profiles.length > 0 && (
-                          <button
-                            className={`btn btn-sm ${expandedUnit === unit.linkId ? 'btn-active' : ''}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setExpandedUnit(
-                                expandedUnit === unit.linkId ? null : unit.linkId
-                              );
-                            }}
-                          >
-                            {expandedUnit === unit.linkId ? '▲' : '▼'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {expandedUnit === unit.linkId && unit.profiles.length > 0 && (
-                      <div className="build-picker-item-profiles">
-                        <ProfileViewer profiles={unit.profiles} compact />
-                      </div>
-                    )}
+                  <PickerItem
+                    key={unit.linkId}
+                    unit={unit}
+                    expandedUnit={expandedUnit}
+                    onExpand={setExpandedUnit}
+                    onPick={handlePickUnit}
+                  />
+                ))
+              ) : (
+                // All other modes: group by unit type
+                groupByUnitType(filteredPicker).map(({ label, units: groupUnits }) => (
+                  <div key={label} className="picker-type-group">
+                    <div className="picker-type-header">{label}</div>
+                    {groupUnits.map((unit) => (
+                      <PickerItem
+                        key={unit.linkId}
+                        unit={unit}
+                        expandedUnit={expandedUnit}
+                        onExpand={setExpandedUnit}
+                        onPick={handlePickUnit}
+                      />
+                    ))}
                   </div>
                 ))
               )}
@@ -757,6 +788,59 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---- PickerItem: reusable unit card in the picker panel ----
+
+interface PickerItemProps {
+  unit: UnitOption;
+  expandedUnit: string | null;
+  onExpand: (id: string | null) => void;
+  onPick: (unit: UnitOption) => void;
+}
+
+function PickerItem({ unit, expandedUnit, onExpand, onPick }: PickerItemProps) {
+  const isExpanded = expandedUnit === unit.linkId;
+  return (
+    <div className="build-picker-item">
+      <div
+        className="build-picker-item-header"
+        onClick={() => onExpand(isExpanded ? null : unit.linkId)}
+      >
+        <span className="unit-name">{unit.name}</span>
+        <div className="unit-actions">
+          {unit.points > 0 && (
+            <span className="unit-points">{unit.points} pts</span>
+          )}
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPick(unit);
+            }}
+          >
+            + Add
+          </button>
+          {unit.profiles.length > 0 && (
+            <button
+              className={`btn btn-sm ${isExpanded ? 'btn-active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpand(isExpanded ? null : unit.linkId);
+              }}
+            >
+              {isExpanded ? '▲' : '▼'}
+            </button>
+          )}
+        </div>
+      </div>
+      {isExpanded && unit.profiles.length > 0 && (
+        <div className="build-picker-item-profiles">
+          <ProfileViewer profiles={unit.profiles} compact />
+        </div>
+      )}
     </div>
   );
 }
