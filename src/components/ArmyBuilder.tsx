@@ -6,7 +6,7 @@ import type {
 } from '../types/battlescribe';
 import { KNOWN_FACTIONS, KNOWN_SUBFACTIONS, KNOWN_FORCE_ENTRIES, fetchGameSystem } from '../services/dataFetcher';
 import { BuildTab } from './BuildTab';
-import { FactionRulesTab } from './FactionRulesTab';
+import { ArmySummary } from './ArmySummary';
 import { AbilitiesSummary } from './AbilitiesSummary';
 import './ArmyBuilder.css';
 
@@ -25,6 +25,7 @@ function createEmptyArmy(name: string): ArmyList {
     pointsLimit: 2000,
     regiments: [],
     auxiliaryUnits: [],
+    factionTerrainUnit: null,
     generalUnitId: null,
     battleTraitProfiles: [],
     battleFormation: null,
@@ -238,7 +239,7 @@ function BuilderView({
   subfactions,
   onUpdateArmy,
 }: BuilderViewProps) {
-  const [activeTab, setActiveTab] = useState<'setup' | 'build' | 'faction' | 'abilities'>('setup');
+  const [activeTab, setActiveTab] = useState<'setup' | 'build' | 'summary' | 'abilities'>('setup');
 
   const isSetupComplete = !!army.faction && !!army.forceEntry;
 
@@ -266,12 +267,10 @@ function BuilderView({
           {unitCount > 0 && <span className="tab-counter">{unitCount}</span>}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'faction' ? 'active' : ''} ${!isSetupComplete ? 'disabled' : ''}`}
-          onClick={() => isSetupComplete && setActiveTab('faction')}
-          disabled={!isSetupComplete}
-          title={!isSetupComplete ? 'Complete setup first' : undefined}
+          className={`tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
+          onClick={() => setActiveTab('summary')}
         >
-          3. Faction Rules
+          3. Army Summary
         </button>
         <button
           className={`tab-btn ${activeTab === 'abilities' ? 'active' : ''}`}
@@ -298,8 +297,8 @@ function BuilderView({
           <BuildTab army={army} onUpdateArmy={onUpdateArmy} />
         )}
 
-        {activeTab === 'faction' && army.faction && (
-          <FactionRulesTab army={army} onUpdateArmy={onUpdateArmy} />
+        {activeTab === 'summary' && (
+          <ArmySummary army={army} />
         )}
 
         {activeTab === 'abilities' && (

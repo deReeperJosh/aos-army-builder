@@ -123,6 +123,12 @@ export interface EntryLink {
   enabledAffectIds: string[];
 }
 
+export interface RenownRegiment {
+  id: string;
+  name: string;      // e.g. "Regiment of Renown: The Blacktalons"
+  profiles: Profile[];
+}
+
 export interface Catalogue {
   id: string;
   name: string;
@@ -139,6 +145,7 @@ export interface Catalogue {
   spellLores: FactionOption[];                // Available spell lore options
   prayerLores: FactionOption[];               // Available prayer lore options
   manifestationLores: FactionOption[];        // Available manifestation lore options
+  renownRegiments: RenownRegiment[];          // Only populated in Regiments of Renown.cat
 }
 
 // Army builder types
@@ -178,6 +185,7 @@ export interface ArmyList {
   pointsLimit: number;
   regiments: ArmyRegiment[];
   auxiliaryUnits: ArmyUnit[];
+  factionTerrainUnit: ArmyUnit | null;         // Selected faction terrain unit
   // Faction rules selections
   generalUnitId: string | null;                // ID of the army unit that is the General
   battleTraitProfiles: Profile[];              // Battle trait profiles for the selected faction

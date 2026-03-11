@@ -13,6 +13,7 @@ import type {
   CatalogueLink,
   FactionOption,
   FactionOptionGroup,
+  RenownRegiment,
 } from '../types/battlescribe';
 
 const GST_NS = 'http://www.battlescribe.net/schema/gameSystemSchema';
@@ -139,6 +140,11 @@ export function parseCatalogue(xmlText: string): Catalogue {
   );
   const manifestationLores = manifestationLoreGroup?.options.filter((o) => !o.hidden) ?? [];
 
+  // Extract Regiments of Renown (only present in the dedicated Regiments of Renown.cat)
+  const renownRegiments: RenownRegiment[] = selectionEntries
+    .filter((e) => e.name.startsWith('Regiment of Renown:'))
+    .map((e) => ({ id: e.id, name: e.name, profiles: e.profiles }));
+
   return {
     id: root.getAttribute('id') ?? '',
     name: root.getAttribute('name') ?? '',
@@ -154,6 +160,7 @@ export function parseCatalogue(xmlText: string): Catalogue {
     spellLores,
     prayerLores,
     manifestationLores,
+    renownRegiments,
   };
 }
 
@@ -260,7 +267,6 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
   const links: EntryLink[] = [];
 
   const REGIMENTAL_LEADER_ID = 'd1f3-921c-b403-1106';
-  const REGIMENTAL_OPTION_ID = 'db3a-7199-c92e-f3cf';
 
   for (const container of containers) {
     for (const el of directChildren(container, 'entryLink', ns)) {
@@ -281,7 +287,11 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
         }
       }
 
-      // Check modifierGroups for enabledAffectIds (units/categories enabled as regiment options)
+      // Check modifierGroups for enabledAffectIds (units/categories enabled as regiment options).
+      // We capture ALL entry IDs targeted by any category-add modifier in modifierGroups,
+      // regardless of which category value is added. Some factions (e.g. Ogor Mawtribes) use
+      // custom category IDs for specific heroes like Bloodpelt Hunter instead of the generic
+      // REGIMENTAL_OPTION_ID, so filtering by value would miss them.
       const enabledAffectIds: string[] = [];
       const mgContainers = directChildren(el, 'modifierGroups', ns);
       for (const mgc of mgContainers) {
@@ -289,12 +299,8 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
           const innerModContainers = directChildren(mg, 'modifiers', ns);
           for (const imc of innerModContainers) {
             for (const mod of directChildren(imc, 'modifier', ns)) {
-              const value = mod.getAttribute('value') ?? '';
               const affects = mod.getAttribute('affects') ?? '';
-              if (
-                value === REGIMENTAL_OPTION_ID &&
-                affects.startsWith('self.entries.recursive.')
-              ) {
+              if (affects.startsWith('self.entries.recursive.')) {
                 const targetId = affects.split('.').pop() ?? '';
                 if (targetId && !enabledAffectIds.includes(targetId)) {
                   enabledAffectIds.push(targetId);
