@@ -240,3 +240,9 @@
   color: var(--color-gold, #d4a017);
   background: rgba(212, 160, 23, 0.08);
 }
+
+.unit-command-tag {
+  border-color: var(--color-text-muted, #888);
+  color: var(--color-text-muted, #888);
+  background: rgba(128, 128, 128, 0.08);
+}

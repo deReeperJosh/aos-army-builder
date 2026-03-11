@@ -577,6 +577,16 @@
   white-space: nowrap;
 }
 
+.unit-upgrade-badge-enhancement {
+  color: var(--color-gold, #d4a017);
+  background: rgba(212, 160, 23, 0.12);
+}
+
+.unit-upgrade-badge-command {
+  color: var(--color-text-muted, #888);
+  background: rgba(128, 128, 128, 0.12);
+}
+
 /* ---- Wargear / Enhancement selection in detail panel ---- */
 .unit-wargear-section {
   margin-bottom: 12px;

@@ -145,6 +145,8 @@ export interface SelectionEntry {
   subEntries: SelectionEntry[];
   /** Wargear option groups (e.g. "Wargear Options" with Chaintrap / Blood Vulture). */
   wargearGroups: WargearOptionGroup[];
+  /** Optional command model names (e.g. ["Champion", "Musician", "Standard Bearer"]). */
+  commandModelOptions: string[];
 }
 
 export interface EntryLink {
@@ -207,6 +209,8 @@ export interface ArmyUnit {
   selectedWargear?: SelectedWargear[];
   /** Currently selected enhancements (Heroic Traits, Artefacts of Power, Big Names, etc.). */
   selectedEnhancements?: SelectedEnhancement[];
+  /** Currently selected command models (Champion, Musician, Standard Bearer, etc.). */
+  selectedCommandModels?: string[];
 }
 
 export interface ArmyRegiment {

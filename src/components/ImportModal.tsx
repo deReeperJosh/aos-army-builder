@@ -16,7 +16,7 @@ import { parseNewRecruitList, type ParsedList, type ParsedUnit } from '../servic
 import { fetchCatalogue } from '../services/dataFetcher';
 import { KNOWN_FACTIONS, KNOWN_SUBFACTIONS, KNOWN_FORCE_ENTRIES } from '../services/dataFetcher';
 import type { UnitOption } from '../services/regimentService';
-import { collectAllProfiles, collectAllWargearGroups } from '../services/regimentService';
+import { collectAllProfiles, collectAllWargearGroups, collectAllCommandModelOptions } from '../services/regimentService';
 import './ImportModal.css';
 
 let nextId = 1;
@@ -90,6 +90,7 @@ function buildUnitOptions(
         conditionalCategoryIds: link.conditionalCategoryIds,
         wargearGroups: entry ? collectAllWargearGroups(entry) : [],
         enhancementGroupRefs: link.enhancementGroupRefs,
+        commandModelOptions: entry ? collectAllCommandModelOptions(entry) : [],
       };
     });
 
@@ -129,6 +130,7 @@ function makeArmyUnit(unit: UnitOption): ArmyUnit {
     isRegimentalLeader: unit.isRegimentalLeader,
     selectedWargear,
     selectedEnhancements: [],
+    selectedCommandModels: [],
   };
 }
 
@@ -289,12 +291,13 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
     warnings.push(`Could not find subfaction "${parsed.subfactionName}". Please set it manually.`);
   }
 
-  // --- Helper: apply parsed upgrades (wargear / enhancements) to an ArmyUnit ---
+  // --- Helper: apply parsed upgrades (wargear / enhancements / command models) to an ArmyUnit ---
   const applyUpgrades = (unit: ArmyUnit, opt: UnitOption, upgrades: string[]): ArmyUnit => {
     if (!upgrades || upgrades.length === 0) return unit;
 
     let selectedWargear: SelectedWargear[] = [...(unit.selectedWargear ?? [])];
     let selectedEnhancements: SelectedEnhancement[] = [...(unit.selectedEnhancements ?? [])];
+    let selectedCommandModels: string[] = [...(unit.selectedCommandModels ?? [])];
     const addedEnhancementGroups = new Set(selectedEnhancements.map((e) => e.groupName));
 
     for (const raw of upgrades) {
@@ -312,6 +315,14 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
           matched = true;
           break;
         }
+      }
+      if (matched) continue;
+
+      // Try to match as a command model option
+      const cmMatch = opt.commandModelOptions.find((m) => m.toLowerCase() === upgradeName.toLowerCase());
+      if (cmMatch && !selectedCommandModels.includes(cmMatch)) {
+        selectedCommandModels = [...selectedCommandModels, cmMatch];
+        matched = true;
       }
       if (matched) continue;
 
@@ -341,7 +352,7 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
       }
     }
 
-    return { ...unit, selectedWargear, selectedEnhancements };
+    return { ...unit, selectedWargear, selectedEnhancements, selectedCommandModels };
   };
 
   // --- Helper: resolve a parsed unit to an ArmyUnit ---

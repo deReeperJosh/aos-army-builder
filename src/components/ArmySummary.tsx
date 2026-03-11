@@ -183,14 +183,17 @@ function UnitCard({ unit, regimentLabel, isLeader, isGeneral }: UnitCardInfo) {
         </div>
       )}
 
-      {/* Selected wargear and enhancement badges */}
-      {((unit.selectedWargear?.length ?? 0) > 0 || (unit.selectedEnhancements?.length ?? 0) > 0) && (
+      {/* Selected wargear, enhancement, and command model badges */}
+      {((unit.selectedWargear?.length ?? 0) > 0 || (unit.selectedEnhancements?.length ?? 0) > 0 || (unit.selectedCommandModels?.length ?? 0) > 0) && (
         <div className="unit-upgrade-summary">
           {(unit.selectedWargear ?? []).map((w) => (
             <span key={w.groupId} className="unit-upgrade-tag">⚔ {w.optionName}</span>
           ))}
           {(unit.selectedEnhancements ?? []).map((e) => (
             <span key={e.groupName} className="unit-upgrade-tag unit-enhancement-tag">✦ {e.optionName}</span>
+          ))}
+          {(unit.selectedCommandModels ?? []).map((m) => (
+            <span key={m} className="unit-upgrade-tag unit-command-tag">★ {m}</span>
           ))}
         </div>
       )}

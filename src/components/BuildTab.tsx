@@ -12,10 +12,10 @@ import type {
 } from '../types/battlescribe';
 import { fetchCatalogue, fetchRenownAllowances } from '../services/dataFetcher';
 import {
-  GHB_2025_FORCE_ID,
   getValidRegimentUnits,
   collectAllProfiles,
   collectAllWargearGroups,
+  collectAllCommandModelOptions,
   type UnitOption,
 } from '../services/regimentService';
 import { ProfileViewer } from './ProfileViewer';
@@ -104,8 +104,8 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
 
   const loadedRef = useRef<string | null>(null);
 
-  const isGHB = army.forceEntry?.id === GHB_2025_FORCE_ID;
-  const supportsLores = army.forceEntry ? GHB_FORCE_IDS.has(army.forceEntry.id) : false;
+  const isGHB = army.forceEntry ? GHB_FORCE_IDS.has(army.forceEntry.id) : false;
+  const supportsLores = isGHB;
 
   const loadUnits = useCallback(async () => {
     if (!army.faction) return;
@@ -195,6 +195,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
             conditionalCategoryIds: link.conditionalCategoryIds,
             wargearGroups: entry ? collectAllWargearGroups(entry) : [],
             enhancementGroupRefs: link.enhancementGroupRefs,
+            commandModelOptions: entry ? collectAllCommandModelOptions(entry) : [],
           };
         });
 
@@ -411,6 +412,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       isRegimentalLeader: unit.isRegimentalLeader,
       selectedWargear,
       selectedEnhancements: [],
+      selectedCommandModels: [],
     };
   };
 
@@ -1029,6 +1031,33 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     </div>
                   )}
 
+                  {/* Command Models (Champion, Musician, Standard Bearer) */}
+                  {selectedUnitOption && selectedUnitOption.commandModelOptions.length > 0 && selectedUnit && (
+                    <div className="unit-wargear-section">
+                      <div className="unit-wargear-title">Command Models</div>
+                      {selectedUnitOption.commandModelOptions.map((opt) => {
+                        const isChecked = (selectedUnit.selectedCommandModels ?? []).includes(opt);
+                        return (
+                          <div key={opt} className="army-option-row">
+                            <label className="army-option-label">{opt}</label>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (!selectedUnit) return;
+                                const current = selectedUnit.selectedCommandModels ?? [];
+                                const next = e.target.checked
+                                  ? [...current, opt]
+                                  : current.filter((m) => m !== opt);
+                                handleUpdateUnit(selectedUnit.id, { selectedCommandModels: next });
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Unit Profiles */}
                   {(() => {
                     const combinedProfiles = [
@@ -1116,17 +1145,24 @@ function PickerItem({ unit, expandedUnit, onExpand, onPick }: PickerItemProps) {
   );
 }
 
-// ---- UnitUpgradeBadges: shows selected wargear and enhancement tags on unit rows ----
+// ---- UnitUpgradeBadges: shows selected wargear, enhancement, and command model tags on unit rows ----
 
 function UnitUpgradeBadges({ unit }: { unit: ArmyUnit }) {
   const wargearBadges = (unit.selectedWargear ?? []).map((w) => w.optionName);
   const enhancementBadges = (unit.selectedEnhancements ?? []).map((e) => e.optionName);
-  const allBadges = [...wargearBadges, ...enhancementBadges];
+  const commandModelBadges = (unit.selectedCommandModels ?? []);
+  const allBadges = [...wargearBadges, ...enhancementBadges, ...commandModelBadges];
   if (allBadges.length === 0) return null;
   return (
     <div className="unit-upgrade-badges">
-      {allBadges.map((badge) => (
+      {wargearBadges.map((badge) => (
         <span key={badge} className="unit-upgrade-badge">{badge}</span>
+      ))}
+      {enhancementBadges.map((badge) => (
+        <span key={badge} className="unit-upgrade-badge unit-upgrade-badge-enhancement">✦ {badge}</span>
+      ))}
+      {commandModelBadges.map((badge) => (
+        <span key={badge} className="unit-upgrade-badge unit-upgrade-badge-command">★ {badge}</span>
       ))}
     </div>
   );

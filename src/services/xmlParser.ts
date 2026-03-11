@@ -305,26 +305,40 @@ function parseSelectionEntry(el: Element, ns: string): SelectionEntry {
   }
 
   // Parse wargear option groups (selectionEntryGroups named "Wargear Options")
+  // and command model groups (selectionEntryGroups named "Command Models")
   const wargearGroups: WargearOptionGroup[] = [];
+  const commandModelOptions: string[] = [];
   const segContainers = directChildren(el, 'selectionEntryGroups', ns);
   for (const segContainer of segContainers) {
     for (const grpEl of directChildren(segContainer, 'selectionEntryGroup', ns)) {
       const groupName = decodeHtmlEntities(grpEl.getAttribute('name') ?? '');
-      if (groupName !== 'Wargear Options') continue;
-      const groupId = grpEl.getAttribute('id') ?? '';
-      const options: WargearOption[] = [];
-      const optContainers = directChildren(grpEl, 'selectionEntries', ns);
-      for (const optContainer of optContainers) {
-        for (const optEl of directChildren(optContainer, 'selectionEntry', ns)) {
-          const optId = optEl.getAttribute('id') ?? '';
-          const optName = decodeHtmlEntities(optEl.getAttribute('name') ?? '');
-          // Collect profiles from the option and its nested sub-entries (weapon definitions live one level down)
-          const optProfiles = collectProfilesFromXmlElement(optEl, ns);
-          options.push({ id: optId, name: optName, profiles: optProfiles });
+      if (groupName === 'Wargear Options') {
+        const groupId = grpEl.getAttribute('id') ?? '';
+        const options: WargearOption[] = [];
+        const optContainers = directChildren(grpEl, 'selectionEntries', ns);
+        for (const optContainer of optContainers) {
+          for (const optEl of directChildren(optContainer, 'selectionEntry', ns)) {
+            const optId = optEl.getAttribute('id') ?? '';
+            const optName = decodeHtmlEntities(optEl.getAttribute('name') ?? '');
+            // Collect profiles from the option and its nested sub-entries (weapon definitions live one level down)
+            const optProfiles = collectProfilesFromXmlElement(optEl, ns);
+            options.push({ id: optId, name: optName, profiles: optProfiles });
+          }
         }
-      }
-      if (options.length > 0) {
-        wargearGroups.push({ id: groupId, name: groupName, options });
+        if (options.length > 0) {
+          wargearGroups.push({ id: groupId, name: groupName, options });
+        }
+      } else if (groupName === 'Command Models') {
+        // Collect option names from entryLinks inside the Command Models group
+        const elContainers = directChildren(grpEl, 'entryLinks', ns);
+        for (const elc of elContainers) {
+          for (const linkEl of directChildren(elc, 'entryLink', ns)) {
+            const linkName = decodeHtmlEntities(linkEl.getAttribute('name') ?? '');
+            if (linkName && !commandModelOptions.includes(linkName)) {
+              commandModelOptions.push(linkName);
+            }
+          }
+        }
       }
     }
   }
@@ -339,6 +353,7 @@ function parseSelectionEntry(el: Element, ns: string): SelectionEntry {
     categoryLinks,
     subEntries,
     wargearGroups,
+    commandModelOptions,
   };
 }
 
