@@ -37,12 +37,11 @@ export function ArmyBuilder() {
   const [activeArmyId, setActiveArmyId] = useState<string | null>(null);
   const [view, setView] = useState<View>('home');
   const [gameSystem, setGameSystem] = useState<GameSystem | null>(null);
-  const [gameSystemLoading, setGameSystemLoading] = useState(false);
+  const [gameSystemLoading, setGameSystemLoading] = useState(true);
   const [gameSystemError, setGameSystemError] = useState<string | null>(null);
 
   // Load game system on mount
   useEffect(() => {
-    setGameSystemLoading(true);
     fetchGameSystem()
       .then((gs) => setGameSystem(gs))
       .catch((e) => setGameSystemError(e.message))
