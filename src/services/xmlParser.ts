@@ -11,6 +11,8 @@ import type {
   Cost,
   CategoryLink,
   CatalogueLink,
+  FactionOption,
+  FactionOptionGroup,
 } from '../types/battlescribe';
 
 const GST_NS = 'http://www.battlescribe.net/schema/gameSystemSchema';
@@ -108,6 +110,35 @@ export function parseCatalogue(xmlText: string): Catalogue {
   // Parse entry links (units referenced from this catalogue)
   const entryLinks = parseEntryLinks(root, ns);
 
+  // Parse shared selection entry groups (Battle Formations, Lores, etc.)
+  const selectionEntryGroups = parseSharedSelectionEntryGroups(root, ns);
+
+  // Extract Battle Traits profiles (from the 'Battle Traits: X' shared entry)
+  const battleTraitsEntry = selectionEntries.find((e) =>
+    e.name.startsWith('Battle Traits:')
+  );
+  const battleTraitProfiles = battleTraitsEntry?.profiles ?? [];
+
+  // Extract Battle Formations (from the 'Battle Formations: X' shared group)
+  const formationGroup = selectionEntryGroups.find((g) =>
+    g.name.startsWith('Battle Formations:')
+  );
+  const battleFormations = formationGroup?.options.filter((o) => !o.hidden) ?? [];
+
+  // Extract Spell Lore options
+  const spellLoreGroup = selectionEntryGroups.find((g) => g.name === 'Spell Lores');
+  const spellLores = spellLoreGroup?.options.filter((o) => !o.hidden) ?? [];
+
+  // Extract Prayer Lore options
+  const prayerLoreGroup = selectionEntryGroups.find((g) => g.name === 'Prayer Lores');
+  const prayerLores = prayerLoreGroup?.options.filter((o) => !o.hidden) ?? [];
+
+  // Extract Manifestation Lore options
+  const manifestationLoreGroup = selectionEntryGroups.find(
+    (g) => g.name === 'Manifestation Lores'
+  );
+  const manifestationLores = manifestationLoreGroup?.options.filter((o) => !o.hidden) ?? [];
+
   return {
     id: root.getAttribute('id') ?? '',
     name: root.getAttribute('name') ?? '',
@@ -117,6 +148,12 @@ export function parseCatalogue(xmlText: string): Catalogue {
     catalogueLinks,
     selectionEntries,
     entryLinks,
+    selectionEntryGroups,
+    battleTraitProfiles,
+    battleFormations,
+    spellLores,
+    prayerLores,
+    manifestationLores,
   };
 }
 
@@ -172,6 +209,50 @@ function parseSelectionEntry(el: Element, ns: string): SelectionEntry {
     categoryLinks,
     subEntries,
   };
+}
+
+function parseSharedSelectionEntryGroups(parent: Element, ns: string): FactionOptionGroup[] {
+  const groups: FactionOptionGroup[] = [];
+  const containers = directChildren(parent, 'sharedSelectionEntryGroups', ns);
+
+  for (const container of containers) {
+    for (const grpEl of directChildren(container, 'selectionEntryGroup', ns)) {
+      const groupName = decodeHtmlEntities(grpEl.getAttribute('name') ?? '');
+      const groupId = grpEl.getAttribute('id') ?? '';
+      const options: FactionOption[] = [];
+
+      // Get direct selectionEntries within this group
+      const seContainers = directChildren(grpEl, 'selectionEntries', ns);
+      for (const seContainer of seContainers) {
+        for (const entryEl of directChildren(seContainer, 'selectionEntry', ns)) {
+          const profiles = parseProfiles(entryEl, ns);
+          const hidden = entryEl.getAttribute('hidden') === 'true';
+
+          // Check for an entryLink targetId (used by lore options referencing Lores.cat groups)
+          let targetGroupId: string | undefined;
+          const elContainers = directChildren(entryEl, 'entryLinks', ns);
+          for (const elc of elContainers) {
+            const firstLink = directChildren(elc, 'entryLink', ns)[0];
+            if (firstLink) {
+              targetGroupId = firstLink.getAttribute('targetId') ?? undefined;
+            }
+          }
+
+          options.push({
+            id: entryEl.getAttribute('id') ?? '',
+            name: decodeHtmlEntities(entryEl.getAttribute('name') ?? ''),
+            profiles,
+            hidden,
+            targetGroupId,
+          });
+        }
+      }
+
+      groups.push({ id: groupId, name: groupName, options });
+    }
+  }
+
+  return groups;
 }
 
 function parseEntryLinks(parent: Element, ns: string): EntryLink[] {

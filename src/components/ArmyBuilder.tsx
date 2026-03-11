@@ -6,6 +6,7 @@ import type {
 } from '../types/battlescribe';
 import { KNOWN_FACTIONS, KNOWN_SUBFACTIONS, KNOWN_FORCE_ENTRIES, fetchGameSystem } from '../services/dataFetcher';
 import { BuildTab } from './BuildTab';
+import { FactionRulesTab } from './FactionRulesTab';
 import { AbilitiesSummary } from './AbilitiesSummary';
 import './ArmyBuilder.css';
 
@@ -24,6 +25,12 @@ function createEmptyArmy(name: string): ArmyList {
     pointsLimit: 2000,
     regiments: [],
     auxiliaryUnits: [],
+    generalUnitId: null,
+    battleTraitProfiles: [],
+    battleFormation: null,
+    spellLore: null,
+    prayerLore: null,
+    manifestationLore: null,
   };
 }
 
@@ -231,7 +238,7 @@ function BuilderView({
   subfactions,
   onUpdateArmy,
 }: BuilderViewProps) {
-  const [activeTab, setActiveTab] = useState<'setup' | 'build' | 'abilities'>('setup');
+  const [activeTab, setActiveTab] = useState<'setup' | 'build' | 'faction' | 'abilities'>('setup');
 
   const isSetupComplete = !!army.faction && !!army.forceEntry;
 
@@ -259,10 +266,18 @@ function BuilderView({
           {unitCount > 0 && <span className="tab-counter">{unitCount}</span>}
         </button>
         <button
+          className={`tab-btn ${activeTab === 'faction' ? 'active' : ''} ${!isSetupComplete ? 'disabled' : ''}`}
+          onClick={() => isSetupComplete && setActiveTab('faction')}
+          disabled={!isSetupComplete}
+          title={!isSetupComplete ? 'Complete setup first' : undefined}
+        >
+          3. Faction Rules
+        </button>
+        <button
           className={`tab-btn ${activeTab === 'abilities' ? 'active' : ''}`}
           onClick={() => setActiveTab('abilities')}
         >
-          3. Abilities Summary
+          4. Abilities Summary
         </button>
       </div>
 
@@ -281,6 +296,10 @@ function BuilderView({
 
         {activeTab === 'build' && army.faction && (
           <BuildTab army={army} onUpdateArmy={onUpdateArmy} />
+        )}
+
+        {activeTab === 'faction' && army.faction && (
+          <FactionRulesTab army={army} onUpdateArmy={onUpdateArmy} />
         )}
 
         {activeTab === 'abilities' && (

@@ -38,6 +38,11 @@
   color: var(--color-text-muted);
 }
 
+.ability-section-title.faction-title {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
 .ability-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
