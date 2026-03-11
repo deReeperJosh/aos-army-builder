@@ -181,6 +181,30 @@ export function parseCatalogue(
   );
   const manifestationLores = manifestationLoreGroup?.options.filter((o) => !o.hidden) ?? [];
 
+  // Detect indirect manifestation lore reference: many faction catalogues have a hidden
+  // "Manifestation Lore" selectionEntry with an entryLink to the shared "Manifestation Lores"
+  // group in Lores.cat. Capture the targetId so BuildTab can resolve it from Lores.cat.
+  let manifestationLoreGroupId: string | null = manifestationLoreGroup?.id ?? null;
+  if (!manifestationLoreGroupId) {
+    // Look for a selectionEntry named 'Manifestation Lore' in selectionEntries containers
+    findManifestationLore: for (const container of directChildren(root, 'selectionEntries', ns)) {
+      for (const el of directChildren(container, 'selectionEntry', ns)) {
+        if (el.getAttribute('name') === 'Manifestation Lore') {
+          // Extract the entryLink's targetId inside this selectionEntry
+          for (const elc of directChildren(el, 'entryLinks', ns)) {
+            for (const link of directChildren(elc, 'entryLink', ns)) {
+              const targetId = link.getAttribute('targetId');
+              if (targetId) {
+                manifestationLoreGroupId = targetId;
+                break findManifestationLore;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   // Extract Regiments of Renown (only present in the dedicated Regiments of Renown.cat).
   // For each entry, also extract the condition childId (a forceEntry ID from the GST) and use
   // the optional renownAllowances map to resolve it to the faction catalogue IDs that may use it.
@@ -227,6 +251,7 @@ export function parseCatalogue(
     spellLores,
     prayerLores,
     manifestationLores,
+    manifestationLoreGroupId,
     renownRegiments,
   };
 }

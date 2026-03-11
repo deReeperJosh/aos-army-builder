@@ -118,6 +118,13 @@
   margin-bottom: 24px;
 }
 
+.home-hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .home-armies h3 {
   font-size: 1.1rem;
   font-weight: 600;

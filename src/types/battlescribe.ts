@@ -148,7 +148,10 @@ export interface Catalogue {
   battleFormations: FactionOption[];          // Available battle formations
   spellLores: FactionOption[];                // Available spell lore options
   prayerLores: FactionOption[];               // Available prayer lore options
-  manifestationLores: FactionOption[];        // Available manifestation lore options
+  manifestationLores: FactionOption[];        // Available manifestation lore options (direct, rare)
+  // ID of the shared 'Manifestation Lores' group in Lores.cat that this faction links to.
+  // Most factions reference manifestation lores indirectly via a hidden selectionEntry.
+  manifestationLoreGroupId: string | null;
   renownRegiments: RenownRegiment[];          // Only populated in Regiments of Renown.cat
 }
 
