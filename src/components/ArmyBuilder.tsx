@@ -8,6 +8,7 @@ import { KNOWN_FACTIONS, KNOWN_SUBFACTIONS, KNOWN_FORCE_ENTRIES, fetchGameSystem
 import { BuildTab } from './BuildTab';
 import { ArmySummary } from './ArmySummary';
 import { AbilitiesSummary } from './AbilitiesSummary';
+import { ImportModal } from './ImportModal';
 import './ArmyBuilder.css';
 
 let nextId = 1;
@@ -60,6 +61,7 @@ export function ArmyBuilder() {
   const [gameSystem, setGameSystem] = useState<GameSystem | null>(null);
   const [gameSystemLoading, setGameSystemLoading] = useState(true);
   const [gameSystemError, setGameSystemError] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Load game system on mount
   useEffect(() => {
@@ -97,6 +99,13 @@ export function ArmyBuilder() {
     }
   };
 
+  const importArmy = useCallback((army: ArmyList) => {
+    setArmyLists((prev) => [...prev, army]);
+    setActiveArmyId(army.id);
+    setShowImportModal(false);
+    setView('builder');
+  }, []);
+
   const subfactionsForFaction = activeArmy?.faction
     ? KNOWN_SUBFACTIONS.filter((sf) => sf.factionName === activeArmy.faction!.name)
     : [];
@@ -125,6 +134,9 @@ export function ArmyBuilder() {
                 {activeArmy.name}
               </button>
             )}
+            <button className="nav-btn" onClick={() => setShowImportModal(true)}>
+              ↓ Import
+            </button>
             <button className="nav-btn btn-primary" onClick={createArmy}>
               + New Army
             </button>
@@ -139,6 +151,7 @@ export function ArmyBuilder() {
             onCreateArmy={createArmy}
             onOpenArmy={openArmy}
             onDeleteArmy={deleteArmy}
+            onImportArmy={() => setShowImportModal(true)}
           />
         )}
 
@@ -153,6 +166,13 @@ export function ArmyBuilder() {
           />
         )}
       </main>
+
+      {showImportModal && (
+        <ImportModal
+          onImport={importArmy}
+          onClose={() => setShowImportModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -164,17 +184,23 @@ interface HomeViewProps {
   onCreateArmy: () => void;
   onOpenArmy: (id: string) => void;
   onDeleteArmy: (id: string) => void;
+  onImportArmy: () => void;
 }
 
-function HomeView({ armyLists, onCreateArmy, onOpenArmy, onDeleteArmy }: HomeViewProps) {
+function HomeView({ armyLists, onCreateArmy, onOpenArmy, onDeleteArmy, onImportArmy }: HomeViewProps) {
   return (
     <div className="home-view">
       <div className="home-hero">
         <h2>Welcome to the Age of Sigmar Army Builder</h2>
         <p>Create and manage your Age of Sigmar 4.0 army lists.</p>
-        <button className="btn btn-primary btn-lg" onClick={onCreateArmy}>
-          + Create New Army
-        </button>
+        <div className="home-hero-actions">
+          <button className="btn btn-primary btn-lg" onClick={onCreateArmy}>
+            + Create New Army
+          </button>
+          <button className="btn btn-lg" onClick={onImportArmy}>
+            ↓ Import from Text
+          </button>
+        </div>
       </div>
 
       {armyLists.length > 0 && (
