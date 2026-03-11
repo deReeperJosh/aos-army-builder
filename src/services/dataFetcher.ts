@@ -1,4 +1,4 @@
-import { parseGameSystem, parseCatalogue } from './xmlParser';
+import { parseGameSystem, parseCatalogue, parseRenownAllowances } from './xmlParser';
 import type { GameSystem, Catalogue, Faction, Subfaction } from '../types/battlescribe';
 
 const GITHUB_BASE_URL =
@@ -47,9 +47,22 @@ export async function fetchGameSystem(): Promise<GameSystem> {
   return parseGameSystem(text);
 }
 
-export async function fetchCatalogue(filename: string): Promise<Catalogue> {
+/**
+ * Parse the GST to extract which faction catalogues are allowed for each Regiment of Renown
+ * forceEntry. The result is a map from GST forceEntry ID -> allowed catalogue IDs.
+ * Reuses the cached GST file content so there is no extra network request.
+ */
+export async function fetchRenownAllowances(): Promise<Record<string, string[]>> {
+  const text = await fetchFile(GST_FILE);
+  return parseRenownAllowances(text);
+}
+
+export async function fetchCatalogue(
+  filename: string,
+  renownAllowances: Record<string, string[]> = {}
+): Promise<Catalogue> {
   const text = await fetchFile(filename);
-  return parseCatalogue(text);
+  return parseCatalogue(text, renownAllowances);
 }
 
 // Get list of all factions from the repository

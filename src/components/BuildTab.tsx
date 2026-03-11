@@ -1,6 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { ArmyList, ArmyUnit, ArmyRegiment, Catalogue, SelectionEntry } from '../types/battlescribe';
-import { fetchCatalogue } from '../services/dataFetcher';
+import type {
+  ArmyList,
+  ArmyUnit,
+  ArmyRegiment,
+  Catalogue,
+  SelectionEntry,
+  FactionOption,
+  Profile,
+  RenownRegiment,
+} from '../types/battlescribe';
+import { fetchCatalogue, fetchRenownAllowances } from '../services/dataFetcher';
 import {
   GHB_2025_FORCE_ID,
   getValidRegimentUnits,
@@ -14,7 +23,57 @@ function generateId() {
   return `unit-${Date.now()}-${nextId++}`;
 }
 
-type EditMode = 'leader' | 'units' | 'auxiliary' | null;
+// GHB force IDs that support lore selection
+const GHB_FORCE_IDS = new Set([
+  'f079-501a-2738-6845', // GHB 2025-26
+  'f079-501a-2738-6844', // GHB 2024-25
+]);
+
+// BattleScribe category ID for FACTION TERRAIN units
+const FACTION_TERRAIN_CAT_ID = 'cdd6-ffa1-9b32-4cb8';
+
+// Unit type categories (GST category IDs → display label), in display order
+const UNIT_TYPE_ORDER: { id: string; label: string }[] = [
+  { id: '6e72-1656-d554-528a', label: 'Hero' },
+  { id: '75d6-6995-dfcc-3898', label: 'Infantry' },
+  { id: '926c-df8c-6841-d49e', label: 'Cavalry' },
+  { id: '6d54-625c-d063-13e2', label: 'Monster' },
+  { id: 'f7bc-b618-4b5d-2bae', label: 'War Machine' },
+  { id: 'b224-8c8e-ca93-9860', label: 'Beast' },
+];
+
+const UNIT_TYPE_IDS = new Set(UNIT_TYPE_ORDER.map((t) => t.id));
+
+/** Return the display unit-type label for a UnitOption, or 'Other' if unknown. */
+function getUnitType(unit: UnitOption): string {
+  // Prefer primary category link
+  const primary = unit.categoryLinks.find((cl) => cl.primary && UNIT_TYPE_IDS.has(cl.targetId));
+  if (primary) return UNIT_TYPE_ORDER.find((t) => t.id === primary.targetId)?.label ?? 'Other';
+  // Fall back to first matching type category
+  for (const t of UNIT_TYPE_ORDER) {
+    if (unit.categoryLinks.some((cl) => cl.targetId === t.id)) return t.label;
+  }
+  return 'Other';
+}
+
+/** Group an array of UnitOptions by their unit type in canonical display order. */
+function groupByUnitType(units: UnitOption[]): { label: string; units: UnitOption[] }[] {
+  const map = new Map<string, UnitOption[]>();
+  for (const unit of units) {
+    const label = getUnitType(unit);
+    if (!map.has(label)) map.set(label, []);
+    map.get(label)!.push(unit);
+  }
+  const groups: { label: string; units: UnitOption[] }[] = [];
+  // Add groups in canonical order
+  for (const { label } of UNIT_TYPE_ORDER) {
+    if (map.has(label)) groups.push({ label, units: map.get(label)! });
+  }
+  if (map.has('Other')) groups.push({ label: 'Other', units: map.get('Other')! });
+  return groups;
+}
+
+type EditMode = 'leader' | 'units' | 'auxiliary' | 'terrain' | 'renown' | null;
 
 interface BuildTabProps {
   army: ArmyList;
@@ -23,16 +82,21 @@ interface BuildTabProps {
 
 export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   const [allUnits, setAllUnits] = useState<UnitOption[]>([]);
+  const [factionCat, setFactionCat] = useState<Catalogue | null>(null);
+  const [loresCat, setLoresCat] = useState<Catalogue | null>(null);
+  const [renownCat, setRenownCat] = useState<Catalogue | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState<EditMode>(null);
   const [editRegimentId, setEditRegimentId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [expandedUnit, setExpandedUnit] = useState<string | null>(null);
+  const [showArmyOptions, setShowArmyOptions] = useState(false);
 
   const loadedRef = useRef<string | null>(null);
 
   const isGHB = army.forceEntry?.id === GHB_2025_FORCE_ID;
+  const supportsLores = army.forceEntry ? GHB_FORCE_IDS.has(army.forceEntry.id) : false;
 
   const loadUnits = useCallback(async () => {
     if (!army.faction) return;
@@ -43,7 +107,13 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     setError(null);
 
     try {
-      const factionCat = await fetchCatalogue(army.faction.filename);
+      const factionCatLoaded = await fetchCatalogue(army.faction.filename);
+      setFactionCat(factionCatLoaded);
+
+      // Store battle traits in army when catalogue loads
+      if (factionCatLoaded.battleTraitProfiles.length > 0) {
+        onUpdateArmy({ battleTraitProfiles: factionCatLoaded.battleTraitProfiles });
+      }
 
       let libraryCat: Catalogue | null = null;
       try {
@@ -66,7 +136,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       }
 
       const allLinks = [
-        ...factionCat.entryLinks,
+        ...factionCatLoaded.entryLinks,
         ...(subfactionCat?.entryLinks ?? []),
       ];
 
@@ -87,11 +157,18 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
           const entry = entryMap.get(link.targetId) ?? null;
           const profiles = entry?.profiles ?? [];
           const pts = link.costs.find((c) => c.name === 'pts')?.value ?? 0;
-          // Merge categoryLinks: prefer those on entry link, fall back to entry
+          // Merge categoryLinks: link categories first (they can override primary),
+          // then append any entry categories not already present (by targetId).
+          const entryCats = entry?.categoryLinks ?? [];
           const categoryLinks =
             link.categoryLinks.length > 0
-              ? link.categoryLinks
-              : (entry?.categoryLinks ?? []);
+              ? [
+                  ...link.categoryLinks,
+                  ...entryCats.filter(
+                    (ecl) => !link.categoryLinks.some((lcl) => lcl.targetId === ecl.targetId)
+                  ),
+                ]
+              : entryCats;
 
           return {
             linkId: link.id,
@@ -103,6 +180,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
             categoryLinks,
             isRegimentalLeader: link.isRegimentalLeader,
             enabledAffectIds: link.enabledAffectIds,
+            conditionalCategoryIds: link.conditionalCategoryIds,
           };
         });
 
@@ -119,17 +197,105 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       unique.sort((a, b) => a.name.localeCompare(b.name));
 
       setAllUnits(unique);
+
+      // Load Lores.cat if this faction has lore options
+      if (
+        factionCatLoaded.spellLores.length > 0 ||
+        factionCatLoaded.prayerLores.length > 0 ||
+        factionCatLoaded.manifestationLores.length > 0
+      ) {
+        try {
+          const lores = await fetchCatalogue('Lores.cat');
+          setLoresCat(lores);
+        } catch { /* Lores.cat may not be available */ }
+      }
+
+      // Load Regiments of Renown catalogue (with faction allowances from the GST)
+      try {
+        const allowances = await fetchRenownAllowances();
+        const renown = await fetchCatalogue('Regiments of Renown.cat', allowances);
+        setRenownCat(renown);
+      } catch { /* May not be available */ }
+
       loadedRef.current = key;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load units');
     } finally {
       setLoading(false);
     }
-  }, [army.faction, army.subfaction]);
+  }, [army.faction, army.subfaction, onUpdateArmy]);
 
   useEffect(() => {
     loadUnits();
   }, [loadUnits]);
+
+  // ---- Separate terrain units from regular units ----
+  const factionTerrainUnits = allUnits.filter((u) =>
+    u.categoryLinks.some((cl) => cl.targetId === FACTION_TERRAIN_CAT_ID)
+  );
+  const nonTerrainUnits = allUnits.filter((u) =>
+    !u.categoryLinks.some((cl) => cl.targetId === FACTION_TERRAIN_CAT_ID)
+  );
+
+  // ---- Regiment of Renown options: filtered to factions that can use each regiment ----
+  // Use the loaded catalogue's XML id (e.g. '6353-cb84-ac7f-9a15') not the KNOWN_FACTIONS slug
+  const factionCatalogueId = factionCat?.id ?? '';
+  const availableRenownRegiments: RenownRegiment[] = (renownCat?.renownRegiments ?? []).filter(
+    (r) =>
+      // If allowedCatalogueIds is empty (no restriction extracted), show to all; otherwise filter
+      r.allowedCatalogueIds.length === 0 ||
+      r.allowedCatalogueIds.includes(factionCatalogueId)
+  );
+
+  // ---- Lore profile lookup ----
+  const getLoreProfiles = (option: FactionOption): Profile[] => {
+    if (option.profiles.length > 0) return option.profiles;
+    if (!option.targetGroupId || !loresCat) return [];
+    const group = loresCat.selectionEntryGroups.find((g) => g.id === option.targetGroupId);
+    if (!group) return [];
+    return group.options.flatMap((o) => o.profiles);
+  };
+
+  // ---- Faction option handlers ----
+  const handleSelectFormation = (formationId: string) => {
+    if (!factionCat) return;
+    if (!formationId) { onUpdateArmy({ battleFormation: null }); return; }
+    const formation = factionCat.battleFormations.find((f) => f.id === formationId);
+    onUpdateArmy({ battleFormation: formation ?? null });
+  };
+
+  const handleSelectSpellLore = (loreId: string) => {
+    if (!factionCat) return;
+    if (!loreId) { onUpdateArmy({ spellLore: null }); return; }
+    const option = factionCat.spellLores.find((l) => l.id === loreId);
+    if (!option) return;
+    onUpdateArmy({ spellLore: { ...option, profiles: getLoreProfiles(option) } });
+  };
+
+  const handleSelectPrayerLore = (loreId: string) => {
+    if (!factionCat) return;
+    if (!loreId) { onUpdateArmy({ prayerLore: null }); return; }
+    const option = factionCat.prayerLores.find((l) => l.id === loreId);
+    if (!option) return;
+    onUpdateArmy({ prayerLore: { ...option, profiles: getLoreProfiles(option) } });
+  };
+
+  const handleSelectManifestationLore = (loreId: string) => {
+    if (!factionCat) return;
+    if (!loreId) { onUpdateArmy({ manifestationLore: null }); return; }
+    const option = factionCat.manifestationLores.find((l) => l.id === loreId);
+    if (!option) return;
+    onUpdateArmy({ manifestationLore: { ...option, profiles: getLoreProfiles(option) } });
+  };
+
+  const handleSelectGeneral = (unitId: string) => {
+    onUpdateArmy({ generalUnitId: unitId || null });
+  };
+
+  // ---- All regiment leaders (for General selector) ----
+  const allLeaders: ArmyUnit[] = army.regiments
+    .filter((r) => r.leader !== null)
+    .map((r) => r.leader!);
 
   // ---- Army mutation helpers ----
 
@@ -141,6 +307,19 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       isRegimentOfRenown: false,
     };
     onUpdateArmy({ regiments: [...army.regiments, newRegiment] });
+  };
+
+  const addRenownRegiment = (renown: RenownRegiment) => {
+    const newRegiment: ArmyRegiment = {
+      id: generateId(),
+      leader: null,
+      units: [],
+      isRegimentOfRenown: true,
+      renownName: renown.name.replace('Regiment of Renown: ', ''),
+    };
+    onUpdateArmy({ regiments: [...army.regiments, newRegiment] });
+    setEditMode(null);
+    setSearch('');
   };
 
   const removeRegiment = (regimentId: string) => {
@@ -174,6 +353,11 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   };
 
   const removeRegimentLeader = (regimentId: string) => {
+    const regiment = army.regiments.find((r) => r.id === regimentId);
+    // Clear general if the removed leader was the general
+    if (regiment?.leader && regiment.leader.id === army.generalUnitId) {
+      onUpdateArmy({ generalUnitId: null });
+    }
     onUpdateArmy({
       regiments: army.regiments.map((r) =>
         r.id === regimentId ? { ...r, leader: null } : r
@@ -211,6 +395,12 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     });
   };
 
+  const setFactionTerrain = (unit: UnitOption | null) => {
+    if (!unit) { onUpdateArmy({ factionTerrainUnit: null }); return; }
+    onUpdateArmy({ factionTerrainUnit: makeArmyUnit(unit) });
+    setEditMode(null);
+  };
+
   // ---- Picker helpers ----
 
   const startPickLeader = (regimentId: string) => {
@@ -234,6 +424,19 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     setExpandedUnit(null);
   };
 
+  const startPickTerrain = () => {
+    setEditMode('terrain');
+    setEditRegimentId(null);
+    setSearch('');
+    setExpandedUnit(null);
+  };
+
+  const startPickRenown = () => {
+    setEditMode('renown');
+    setEditRegimentId(null);
+    setSearch('');
+  };
+
   const cancelPick = () => {
     setEditMode(null);
     setEditRegimentId(null);
@@ -243,17 +446,20 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
 
   const pickerUnits: UnitOption[] = (() => {
     if (editMode === 'leader') {
-      return allUnits.filter((u) => u.isRegimentalLeader);
+      return nonTerrainUnits.filter((u) => u.isRegimentalLeader);
     }
     if (editMode === 'units') {
       const regiment = army.regiments.find((r) => r.id === editRegimentId);
-      if (!regiment?.leader) return allUnits.filter((u) => !u.isRegimentalLeader);
-      const leaderOption = allUnits.find((u) => u.linkId === regiment.leader!.entryLinkId);
-      if (!leaderOption) return allUnits.filter((u) => !u.isRegimentalLeader);
-      return getValidRegimentUnits(leaderOption, allUnits);
+      if (!regiment?.leader) return nonTerrainUnits.filter((u) => !u.isRegimentalLeader);
+      const leaderOption = nonTerrainUnits.find((u) => u.linkId === regiment.leader!.entryLinkId);
+      if (!leaderOption) return nonTerrainUnits.filter((u) => !u.isRegimentalLeader);
+      return getValidRegimentUnits(leaderOption, nonTerrainUnits);
     }
     if (editMode === 'auxiliary') {
-      return allUnits.filter((u) => !u.isRegimentalLeader);
+      return nonTerrainUnits.filter((u) => !u.isRegimentalLeader);
+    }
+    if (editMode === 'terrain') {
+      return factionTerrainUnits;
     }
     return [];
   })();
@@ -262,6 +468,12 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     ? pickerUnits.filter((u) => u.name.toLowerCase().includes(search.toLowerCase()))
     : pickerUnits;
 
+  const filteredRenown = search
+    ? availableRenownRegiments.filter((r) =>
+        r.name.toLowerCase().includes(search.toLowerCase())
+      )
+    : availableRenownRegiments;
+
   const handlePickUnit = (unit: UnitOption) => {
     if (editMode === 'leader' && editRegimentId) {
       setRegimentLeader(editRegimentId, unit);
@@ -269,6 +481,8 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       addUnitToRegiment(editRegimentId, unit);
     } else if (editMode === 'auxiliary') {
       addAuxiliaryUnit(unit);
+    } else if (editMode === 'terrain') {
+      setFactionTerrain(unit);
     }
   };
 
@@ -280,7 +494,9 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
         (r.leader?.pointsCost ?? 0) +
         r.units.reduce((s, u) => s + u.pointsCost, 0)
       );
-    }, 0) + army.auxiliaryUnits.reduce((sum, u) => sum + u.pointsCost, 0);
+    }, 0) +
+    army.auxiliaryUnits.reduce((sum, u) => sum + u.pointsCost, 0) +
+    (army.factionTerrainUnit?.pointsCost ?? 0);
 
   const pointsOver = totalPoints > army.pointsLimit && army.pointsLimit > 0;
 
@@ -298,6 +514,135 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
           </div>
         </div>
 
+        {/* Army Options Panel (Battle Formation, Lores, General, Terrain) */}
+        {factionCat && (
+          <div className="army-options-panel">
+            <button
+              className="army-options-toggle"
+              onClick={() => setShowArmyOptions(!showArmyOptions)}
+            >
+              <span>⚔ Army Options</span>
+              <span>{showArmyOptions ? '▲' : '▼'}</span>
+            </button>
+            {showArmyOptions && (
+              <div className="army-options-body">
+                {/* General */}
+                <div className="army-option-row">
+                  <label className="army-option-label">⭐ General</label>
+                  {allLeaders.length === 0 ? (
+                    <span className="army-option-hint">Add a regiment leader first</span>
+                  ) : (
+                    <select
+                      className="form-select form-select-sm"
+                      value={army.generalUnitId ?? ''}
+                      onChange={(e) => handleSelectGeneral(e.target.value)}
+                    >
+                      <option value="">— No General —</option>
+                      {allLeaders.map((l) => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Battle Formation */}
+                {factionCat.battleFormations.length > 0 && (
+                  <div className="army-option-row">
+                    <label className="army-option-label">🏛️ Battle Formation</label>
+                    <select
+                      className="form-select form-select-sm"
+                      value={army.battleFormation?.id ?? ''}
+                      onChange={(e) => handleSelectFormation(e.target.value)}
+                    >
+                      <option value="">— None —</option>
+                      {factionCat.battleFormations.map((f) => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Spell Lore */}
+                {factionCat.spellLores.length > 0 && supportsLores && (
+                  <div className="army-option-row">
+                    <label className="army-option-label">✨ Spell Lore</label>
+                    <select
+                      className="form-select form-select-sm"
+                      value={army.spellLore?.id ?? ''}
+                      onChange={(e) => handleSelectSpellLore(e.target.value)}
+                    >
+                      <option value="">— None —</option>
+                      {factionCat.spellLores.map((l) => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Prayer Lore */}
+                {factionCat.prayerLores.length > 0 && supportsLores && (
+                  <div className="army-option-row">
+                    <label className="army-option-label">🙏 Prayer Lore</label>
+                    <select
+                      className="form-select form-select-sm"
+                      value={army.prayerLore?.id ?? ''}
+                      onChange={(e) => handleSelectPrayerLore(e.target.value)}
+                    >
+                      <option value="">— None —</option>
+                      {factionCat.prayerLores.map((l) => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Manifestation Lore */}
+                {factionCat.manifestationLores.length > 0 && supportsLores && (
+                  <div className="army-option-row">
+                    <label className="army-option-label">🌀 Manifestation</label>
+                    <select
+                      className="form-select form-select-sm"
+                      value={army.manifestationLore?.id ?? ''}
+                      onChange={(e) => handleSelectManifestationLore(e.target.value)}
+                    >
+                      <option value="">— None —</option>
+                      {factionCat.manifestationLores.map((l) => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Faction Terrain */}
+                {factionTerrainUnits.length > 0 && (
+                  <div className="army-option-row">
+                    <label className="army-option-label">🏔️ Faction Terrain</label>
+                    {army.factionTerrainUnit ? (
+                      <div className="terrain-selected">
+                        <span className="terrain-name">{army.factionTerrainUnit.name}</span>
+                        {army.factionTerrainUnit.pointsCost > 0 && (
+                          <span className="terrain-pts">{army.factionTerrainUnit.pointsCost} pts</span>
+                        )}
+                        <button
+                          className="btn btn-xs btn-danger"
+                          onClick={() => onUpdateArmy({ factionTerrainUnit: null })}
+                        >✕</button>
+                      </div>
+                    ) : (
+                      <button
+                        className={`btn btn-sm btn-ghost ${editMode === 'terrain' ? 'active-pick' : ''}`}
+                        onClick={() => editMode === 'terrain' ? cancelPick() : startPickTerrain()}
+                      >
+                        {editMode === 'terrain' ? '← Cancel' : '+ Select Terrain'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="build-structure">
           {loading && (
             <div className="build-loading">
@@ -312,6 +657,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
               editMode={editMode}
               editRegimentId={editRegimentId}
               onAddRegiment={addRegiment}
+              onStartPickRenown={startPickRenown}
               onRemoveRegiment={removeRegiment}
               onRemoveLeader={removeRegimentLeader}
               onRemoveUnit={removeUnitFromRegiment}
@@ -340,6 +686,48 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
             <div className="build-picker-idle-icon">⚔</div>
             <p>Select an action on the left to add units to your army.</p>
           </div>
+        ) : editMode === 'renown' ? (
+          <div className="build-picker">
+            <div className="build-picker-header">
+              <span className="build-picker-title">Pick a Regiment of Renown</span>
+              <input
+                type="search"
+                className="search-input"
+                placeholder="Search…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="btn btn-sm" onClick={cancelPick}>Cancel</button>
+            </div>
+            <div className="build-picker-list">
+              {filteredRenown.length === 0 ? (
+                <div className="build-picker-empty">No Regiments of Renown available.</div>
+              ) : (
+                filteredRenown.map((renown) => (
+                  <div key={renown.id} className="build-picker-item">
+                    <div className="build-picker-item-header">
+                      <span className="unit-name">
+                        {renown.name.replace('Regiment of Renown: ', '')}
+                      </span>
+                      <div className="unit-actions">
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => addRenownRegiment(renown)}
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    </div>
+                    {renown.profiles.length > 0 && (
+                      <div className="build-picker-item-profiles">
+                        <ProfileViewer profiles={renown.profiles} compact />
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         ) : (
           <div className="build-picker">
             <div className="build-picker-header">
@@ -347,6 +735,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                 {editMode === 'leader' && 'Pick a Leader'}
                 {editMode === 'units' && 'Pick a Unit'}
                 {editMode === 'auxiliary' && 'Pick an Auxiliary Unit'}
+                {editMode === 'terrain' && 'Pick Faction Terrain'}
               </span>
               <input
                 type="search"
@@ -367,49 +756,31 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     ? 'No units available for this selection.'
                     : 'No units match your search.'}
                 </div>
-              ) : (
+              ) : editMode === 'terrain' ? (
+                // Terrain picker: no grouping needed
                 filteredPicker.map((unit) => (
-                  <div key={unit.linkId} className="build-picker-item">
-                    <div
-                      className="build-picker-item-header"
-                      onClick={() =>
-                        setExpandedUnit(expandedUnit === unit.linkId ? null : unit.linkId)
-                      }
-                    >
-                      <span className="unit-name">{unit.name}</span>
-                      <div className="unit-actions">
-                        {unit.points > 0 && (
-                          <span className="unit-points">{unit.points} pts</span>
-                        )}
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePickUnit(unit);
-                          }}
-                        >
-                          + Add
-                        </button>
-                        {unit.profiles.length > 0 && (
-                          <button
-                            className={`btn btn-sm ${expandedUnit === unit.linkId ? 'btn-active' : ''}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setExpandedUnit(
-                                expandedUnit === unit.linkId ? null : unit.linkId
-                              );
-                            }}
-                          >
-                            {expandedUnit === unit.linkId ? '▲' : '▼'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {expandedUnit === unit.linkId && unit.profiles.length > 0 && (
-                      <div className="build-picker-item-profiles">
-                        <ProfileViewer profiles={unit.profiles} compact />
-                      </div>
-                    )}
+                  <PickerItem
+                    key={unit.linkId}
+                    unit={unit}
+                    expandedUnit={expandedUnit}
+                    onExpand={setExpandedUnit}
+                    onPick={handlePickUnit}
+                  />
+                ))
+              ) : (
+                // All other modes: group by unit type
+                groupByUnitType(filteredPicker).map(({ label, units: groupUnits }) => (
+                  <div key={label} className="picker-type-group">
+                    <div className="picker-type-header">{label}</div>
+                    {groupUnits.map((unit) => (
+                      <PickerItem
+                        key={unit.linkId}
+                        unit={unit}
+                        expandedUnit={expandedUnit}
+                        onExpand={setExpandedUnit}
+                        onPick={handlePickUnit}
+                      />
+                    ))}
                   </div>
                 ))
               )}
@@ -421,6 +792,59 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   );
 }
 
+// ---- PickerItem: reusable unit card in the picker panel ----
+
+interface PickerItemProps {
+  unit: UnitOption;
+  expandedUnit: string | null;
+  onExpand: (id: string | null) => void;
+  onPick: (unit: UnitOption) => void;
+}
+
+function PickerItem({ unit, expandedUnit, onExpand, onPick }: PickerItemProps) {
+  const isExpanded = expandedUnit === unit.linkId;
+  return (
+    <div className="build-picker-item">
+      <div
+        className="build-picker-item-header"
+        onClick={() => onExpand(isExpanded ? null : unit.linkId)}
+      >
+        <span className="unit-name">{unit.name}</span>
+        <div className="unit-actions">
+          {unit.points > 0 && (
+            <span className="unit-points">{unit.points} pts</span>
+          )}
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPick(unit);
+            }}
+          >
+            + Add
+          </button>
+          {unit.profiles.length > 0 && (
+            <button
+              className={`btn btn-sm ${isExpanded ? 'btn-active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpand(isExpanded ? null : unit.linkId);
+              }}
+            >
+              {isExpanded ? '▲' : '▼'}
+            </button>
+          )}
+        </div>
+      </div>
+      {isExpanded && unit.profiles.length > 0 && (
+        <div className="build-picker-item-profiles">
+          <ProfileViewer profiles={unit.profiles} compact />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- GHB Regiment Structure ----
 
 interface GHBStructureProps {
@@ -428,6 +852,7 @@ interface GHBStructureProps {
   editMode: EditMode;
   editRegimentId: string | null;
   onAddRegiment: () => void;
+  onStartPickRenown: () => void;
   onRemoveRegiment: (id: string) => void;
   onRemoveLeader: (regimentId: string) => void;
   onRemoveUnit: (regimentId: string, unitId: string) => void;
@@ -443,6 +868,7 @@ function GHBStructure({
   editMode,
   editRegimentId,
   onAddRegiment,
+  onStartPickRenown,
   onRemoveRegiment,
   onRemoveLeader,
   onRemoveUnit,
@@ -457,10 +883,19 @@ function GHBStructure({
       {army.regiments.map((regiment, idx) => (
         <div
           key={regiment.id}
-          className={`regiment-block ${editRegimentId === regiment.id ? 'regiment-active' : ''}`}
+          className={`regiment-block ${editRegimentId === regiment.id ? 'regiment-active' : ''} ${regiment.isRegimentOfRenown ? 'regiment-renown' : ''}`}
         >
           <div className="regiment-header">
-            <span className="regiment-title">Regiment {idx + 1}</span>
+            <div className="regiment-title-group">
+              {regiment.isRegimentOfRenown && (
+                <span className="renown-badge">★ Renown</span>
+              )}
+              <span className="regiment-title">
+                {regiment.isRegimentOfRenown && regiment.renownName
+                  ? regiment.renownName
+                  : `Regiment ${idx + 1}`}
+              </span>
+            </div>
             <button
               className="btn btn-xs btn-danger"
               onClick={() => onRemoveRegiment(regiment.id)}
@@ -545,9 +980,17 @@ function GHBStructure({
         </div>
       ))}
 
-      <button className="btn btn-sm btn-secondary" onClick={onAddRegiment}>
-        + Add Regiment
-      </button>
+      <div className="regiment-add-buttons">
+        <button className="btn btn-sm btn-secondary" onClick={onAddRegiment}>
+          + Add Regiment
+        </button>
+        <button
+          className={`btn btn-sm btn-secondary ${editMode === 'renown' ? 'active-pick' : ''}`}
+          onClick={() => editMode === 'renown' ? onCancelPick() : onStartPickRenown()}
+        >
+          {editMode === 'renown' ? '← Cancel' : '+ Regiment of Renown'}
+        </button>
+      </div>
 
       {/* Auxiliary Units */}
       <div className="aux-block">

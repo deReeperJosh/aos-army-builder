@@ -92,37 +92,100 @@ export function AbilitiesSummary({ army }: AbilitiesSummaryProps) {
     ...army.auxiliaryUnits,
   ];
 
-  if (allUnits.length === 0) {
+  const hasUnits = allUnits.length > 0;
+  const hasBattleTraits = army.battleTraitProfiles.length > 0;
+  const hasFormation = !!army.battleFormation;
+  const hasLores =
+    (army.spellLore?.profiles?.length ?? 0) > 0 ||
+    (army.prayerLore?.profiles?.length ?? 0) > 0 ||
+    (army.manifestationLore?.profiles?.length ?? 0) > 0;
+
+  if (!hasUnits && !hasBattleTraits && !hasFormation && !hasLores) {
     return (
       <div className="abilities-summary abilities-empty">
-        <p>Add units to your army to see their abilities here.</p>
+        <p>Add units to your army and configure Faction Rules to see abilities here.</p>
       </div>
     );
   }
 
-  // Separate passive vs activated abilities
+  // Collect faction ability profiles (battle traits + formation + lores)
+  const factionPassive: AbilityEntry[] = [];
+  const factionActivated: AbilityEntry[] = [];
+
+  const classifyFactionProfile = (profile: Profile, sourceName: string) => {
+    if (profile.hidden) return;
+    if (profile.typeName === 'Ability (Passive)') {
+      factionPassive.push({ unitName: sourceName, profile });
+    } else if (
+      profile.typeName === 'Ability (Activated)' ||
+      profile.typeName === 'Ability (Command)' ||
+      profile.typeName === 'Ability (Spell)' ||
+      profile.typeName === 'Ability (Prayer)'
+    ) {
+      factionActivated.push({ unitName: sourceName, profile });
+    }
+  };
+
+  // Battle Traits
+  const factionName = army.faction?.name ?? 'Faction';
+  for (const profile of army.battleTraitProfiles) {
+    classifyFactionProfile(profile, `${factionName} (Battle Trait)`);
+  }
+
+  // Battle Formation
+  if (army.battleFormation) {
+    for (const profile of army.battleFormation.profiles) {
+      classifyFactionProfile(profile, `${army.battleFormation.name} (Formation)`);
+    }
+  }
+
+  // Spell Lore
+  if (army.spellLore?.profiles?.length) {
+    for (const profile of army.spellLore.profiles) {
+      classifyFactionProfile(profile, `${army.spellLore.name} (Spell)`);
+    }
+  }
+
+  // Prayer Lore
+  if (army.prayerLore?.profiles?.length) {
+    for (const profile of army.prayerLore.profiles) {
+      classifyFactionProfile(profile, `${army.prayerLore.name} (Prayer)`);
+    }
+  }
+
+  // Manifestation Lore
+  if (army.manifestationLore?.profiles?.length) {
+    for (const profile of army.manifestationLore.profiles) {
+      classifyFactionProfile(profile, `${army.manifestationLore.name} (Manifestation)`);
+    }
+  }
+
+  // Separate unit passive vs activated abilities
   const passiveAbilities: AbilityEntry[] = [];
   const activatedAbilities: AbilityEntry[] = [];
 
   for (const unit of allUnits) {
+    const isGeneral = unit.id === army.generalUnitId;
+    const unitLabel = isGeneral ? `${unit.name} ⭐` : unit.name;
     for (const profile of unit.profiles) {
       const typeName = profile.typeName ?? '';
       if (typeName === 'Ability (Passive)') {
-        passiveAbilities.push({ unitName: unit.name, profile });
+        passiveAbilities.push({ unitName: unitLabel, profile });
       } else if (typeName === 'Ability (Activated)') {
-        activatedAbilities.push({ unitName: unit.name, profile });
+        activatedAbilities.push({ unitName: unitLabel, profile });
       }
     }
   }
 
-  // Build timing section map
+  // Build timing section map (faction + unit activated)
+  const allActivated = [...factionActivated, ...activatedAbilities];
   const sectionMap = new Map<string, AbilityEntry[]>();
   for (const section of TIMING_SECTIONS) {
     sectionMap.set(section, []);
   }
   const uncategorised: AbilityEntry[] = [];
 
-  for (const entry of activatedAbilities) {
+  for (const entry of allActivated) {
     const timingChar = entry.profile.characteristics.find(
       (c) => c.name === 'Timing'
     );
@@ -143,9 +206,25 @@ export function AbilitiesSummary({ army }: AbilitiesSummaryProps) {
     }
   }
 
+  const allPassive = [...factionPassive, ...passiveAbilities];
+
   return (
     <div className="abilities-summary">
-      {/* Passive Abilities */}
+      {/* Faction: Battle Traits + Formation + Lore passive abilities */}
+      {factionPassive.length > 0 && (
+        <section className="ability-section">
+          <h3 className="ability-section-title passive-title faction-title">
+            Faction Passive Abilities
+          </h3>
+          <div className="ability-cards">
+            {factionPassive.map((entry, i) => (
+              <AbilityCard key={i} entry={entry} showTiming={false} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Unit Passive Abilities */}
       {passiveAbilities.length > 0 && (
         <section className="ability-section">
           <h3 className="ability-section-title passive-title">Passive Abilities</h3>
@@ -157,7 +236,7 @@ export function AbilitiesSummary({ army }: AbilitiesSummaryProps) {
         </section>
       )}
 
-      {/* Timing Sections */}
+      {/* Timing Sections (faction + unit activated) */}
       {TIMING_SECTIONS.map((section) => {
         const entries = sectionMap.get(section) ?? [];
         if (entries.length === 0) return null;
@@ -185,12 +264,11 @@ export function AbilitiesSummary({ army }: AbilitiesSummaryProps) {
         </section>
       )}
 
-      {passiveAbilities.length === 0 &&
-        activatedAbilities.length === 0 && (
-          <div className="abilities-none">
-            <p>No ability profiles found for the units in this army.</p>
-          </div>
-        )}
+      {allPassive.length === 0 && allActivated.length === 0 && (
+        <div className="abilities-none">
+          <p>No ability profiles found for this army.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -207,7 +285,7 @@ function AbilityCard({
   const timing = charMap.get('Timing');
   const effect = charMap.get('Effect') ?? charMap.get('Description') ?? '';
   const declare = charMap.get('Declare');
-  const cost = charMap.get('Cost') ?? charMap.get('Casting Value');
+  const cost = charMap.get('Cost') ?? charMap.get('Casting Value') ?? charMap.get('Chanting Value');
   const keywords = charMap.get('Keywords');
 
   return (

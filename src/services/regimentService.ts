@@ -14,6 +14,8 @@ export interface UnitOption {
   categoryLinks: CategoryLink[];
   isRegimentalLeader: boolean;
   enabledAffectIds: string[];
+  // Categories conditionally gained by this unit when it joins a regiment as a non-leader
+  conditionalCategoryIds: string[];
 }
 
 /**
@@ -34,9 +36,14 @@ export function getValidRegimentUnits(
   }
 
   return allUnits.filter((unit) => {
-    // A leader unit is only valid if specifically referenced by linkId
+    // A leader unit is only valid if specifically referenced by linkId OR if it gains a
+    // conditional category that the leader enables (e.g. "Voice of the Everwinter" heroes
+    // in an Ogor Mawtribes regiment led by a Frostlord on Stonehorn).
     if (unit.isRegimentalLeader) {
-      return enabledAffectIds.includes(unit.linkId);
+      return (
+        enabledAffectIds.includes(unit.linkId) ||
+        unit.conditionalCategoryIds.some((id) => enabledAffectIds.includes(id))
+      );
     }
     // Non-leader: valid if category or linkId matches
     const hasEnabledCategory = unit.categoryLinks.some((cl) =>

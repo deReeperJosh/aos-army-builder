@@ -11,6 +11,9 @@ import type {
   Cost,
   CategoryLink,
   CatalogueLink,
+  FactionOption,
+  FactionOptionGroup,
+  RenownRegiment,
 } from '../types/battlescribe';
 
 const GST_NS = 'http://www.battlescribe.net/schema/gameSystemSchema';
@@ -84,7 +87,48 @@ export function parseGameSystem(xmlText: string): GameSystem {
   };
 }
 
-export function parseCatalogue(xmlText: string): Catalogue {
+/**
+ * Parse the GST (game system) XML to build a map from Regiment of Renown forceEntry ID
+ * to the set of faction catalogue IDs that are allowed to include it.
+ *
+ * Each Regiment of Renown forceEntry in the GST has `instanceOf` conditions with
+ * `scope="parent"` that restrict which faction catalogues can include the regiment.
+ */
+export function parseRenownAllowances(gstXml: string): Record<string, string[]> {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(gstXml, 'application/xml');
+  const root = doc.documentElement;
+  const ns = GST_NS;
+
+  const allowances: Record<string, string[]> = {};
+
+  for (const fe of Array.from(root.getElementsByTagNameNS(ns, 'forceEntry'))) {
+    const feId = fe.getAttribute('id') ?? '';
+    if (!feId) continue;
+
+    const catalogueIds: string[] = [];
+    for (const cond of Array.from(fe.getElementsByTagNameNS(ns, 'condition'))) {
+      if (
+        cond.getAttribute('type') === 'instanceOf' &&
+        cond.getAttribute('scope') === 'parent'
+      ) {
+        const childId = cond.getAttribute('childId');
+        if (childId) catalogueIds.push(childId);
+      }
+    }
+
+    if (catalogueIds.length > 0) {
+      allowances[feId] = catalogueIds;
+    }
+  }
+
+  return allowances;
+}
+
+export function parseCatalogue(
+  xmlText: string,
+  renownAllowances: Record<string, string[]> = {}
+): Catalogue {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xmlText, 'application/xml');
   const root = doc.documentElement;
@@ -108,6 +152,66 @@ export function parseCatalogue(xmlText: string): Catalogue {
   // Parse entry links (units referenced from this catalogue)
   const entryLinks = parseEntryLinks(root, ns);
 
+  // Parse shared selection entry groups (Battle Formations, Lores, etc.)
+  const selectionEntryGroups = parseSharedSelectionEntryGroups(root, ns);
+
+  // Extract Battle Traits profiles (from the 'Battle Traits: X' shared entry)
+  const battleTraitsEntry = selectionEntries.find((e) =>
+    e.name.startsWith('Battle Traits:')
+  );
+  const battleTraitProfiles = battleTraitsEntry?.profiles ?? [];
+
+  // Extract Battle Formations (from the 'Battle Formations: X' shared group)
+  const formationGroup = selectionEntryGroups.find((g) =>
+    g.name.startsWith('Battle Formations:')
+  );
+  const battleFormations = formationGroup?.options.filter((o) => !o.hidden) ?? [];
+
+  // Extract Spell Lore options
+  const spellLoreGroup = selectionEntryGroups.find((g) => g.name === 'Spell Lores');
+  const spellLores = spellLoreGroup?.options.filter((o) => !o.hidden) ?? [];
+
+  // Extract Prayer Lore options
+  const prayerLoreGroup = selectionEntryGroups.find((g) => g.name === 'Prayer Lores');
+  const prayerLores = prayerLoreGroup?.options.filter((o) => !o.hidden) ?? [];
+
+  // Extract Manifestation Lore options
+  const manifestationLoreGroup = selectionEntryGroups.find(
+    (g) => g.name === 'Manifestation Lores'
+  );
+  const manifestationLores = manifestationLoreGroup?.options.filter((o) => !o.hidden) ?? [];
+
+  // Extract Regiments of Renown (only present in the dedicated Regiments of Renown.cat).
+  // For each entry, also extract the condition childId (a forceEntry ID from the GST) and use
+  // the optional renownAllowances map to resolve it to the faction catalogue IDs that may use it.
+  const renownForceEntryIdMap = new Map<string, string>(); // entry id -> GST forceEntry id
+  for (const container of directChildren(root, 'sharedSelectionEntries', ns)) {
+    for (const el of directChildren(container, 'selectionEntry', ns)) {
+      const entryName = el.getAttribute('name') ?? '';
+      if (!entryName.startsWith('Regiment of Renown:')) continue;
+      const entryId = el.getAttribute('id') ?? '';
+      for (const cond of Array.from(el.getElementsByTagNameNS(ns, 'condition'))) {
+        if (cond.getAttribute('type') === 'instanceOf') {
+          const childId = cond.getAttribute('childId');
+          if (childId) {
+            renownForceEntryIdMap.set(entryId, childId);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  const renownRegiments: RenownRegiment[] = selectionEntries
+    .filter((e) => e.name.startsWith('Regiment of Renown:'))
+    .map((e) => {
+      const forceEntryId = renownForceEntryIdMap.get(e.id);
+      const allowedCatalogueIds = forceEntryId
+        ? (renownAllowances[forceEntryId] ?? [])
+        : [];
+      return { id: e.id, name: e.name, profiles: e.profiles, allowedCatalogueIds };
+    });
+
   return {
     id: root.getAttribute('id') ?? '',
     name: root.getAttribute('name') ?? '',
@@ -117,6 +221,13 @@ export function parseCatalogue(xmlText: string): Catalogue {
     catalogueLinks,
     selectionEntries,
     entryLinks,
+    selectionEntryGroups,
+    battleTraitProfiles,
+    battleFormations,
+    spellLores,
+    prayerLores,
+    manifestationLores,
+    renownRegiments,
   };
 }
 
@@ -174,12 +285,55 @@ function parseSelectionEntry(el: Element, ns: string): SelectionEntry {
   };
 }
 
+function parseSharedSelectionEntryGroups(parent: Element, ns: string): FactionOptionGroup[] {
+  const groups: FactionOptionGroup[] = [];
+  const containers = directChildren(parent, 'sharedSelectionEntryGroups', ns);
+
+  for (const container of containers) {
+    for (const grpEl of directChildren(container, 'selectionEntryGroup', ns)) {
+      const groupName = decodeHtmlEntities(grpEl.getAttribute('name') ?? '');
+      const groupId = grpEl.getAttribute('id') ?? '';
+      const options: FactionOption[] = [];
+
+      // Get direct selectionEntries within this group
+      const seContainers = directChildren(grpEl, 'selectionEntries', ns);
+      for (const seContainer of seContainers) {
+        for (const entryEl of directChildren(seContainer, 'selectionEntry', ns)) {
+          const profiles = parseProfiles(entryEl, ns);
+          const hidden = entryEl.getAttribute('hidden') === 'true';
+
+          // Check for an entryLink targetId (used by lore options referencing Lores.cat groups)
+          let targetGroupId: string | undefined;
+          const elContainers = directChildren(entryEl, 'entryLinks', ns);
+          for (const elc of elContainers) {
+            const firstLink = directChildren(elc, 'entryLink', ns)[0];
+            if (firstLink) {
+              targetGroupId = firstLink.getAttribute('targetId') ?? undefined;
+            }
+          }
+
+          options.push({
+            id: entryEl.getAttribute('id') ?? '',
+            name: decodeHtmlEntities(entryEl.getAttribute('name') ?? ''),
+            profiles,
+            hidden,
+            targetGroupId,
+          });
+        }
+      }
+
+      groups.push({ id: groupId, name: groupName, options });
+    }
+  }
+
+  return groups;
+}
+
 function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
   const containers = directChildren(parent, 'entryLinks', ns);
   const links: EntryLink[] = [];
 
   const REGIMENTAL_LEADER_ID = 'd1f3-921c-b403-1106';
-  const REGIMENTAL_OPTION_ID = 'db3a-7199-c92e-f3cf';
 
   for (const container of containers) {
     for (const el of directChildren(container, 'entryLink', ns)) {
@@ -200,23 +354,37 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
         }
       }
 
-      // Check modifierGroups for enabledAffectIds (units/categories enabled as regiment options)
+      // Check modifierGroups for enabledAffectIds (units/categories enabled as regiment options).
+      // We capture ALL entry IDs targeted by any category-add modifier in modifierGroups,
+      // regardless of which category value is added. Some factions (e.g. Ogor Mawtribes) use
+      // custom category IDs for specific heroes like Bloodpelt Hunter instead of the generic
+      // REGIMENTAL_OPTION_ID, so filtering by value would miss them.
       const enabledAffectIds: string[] = [];
+      // Categories conditionally added to this unit itself (no `affects` attribute) inside
+      // a modifierGroup – these represent role-categories the unit acquires when placed in a
+      // regiment that already has a leader (e.g. "Voice of the Everwinter" for Huskard units).
+      const conditionalCategoryIds: string[] = [];
       const mgContainers = directChildren(el, 'modifierGroups', ns);
       for (const mgc of mgContainers) {
         for (const mg of directChildren(mgc, 'modifierGroup', ns)) {
           const innerModContainers = directChildren(mg, 'modifiers', ns);
           for (const imc of innerModContainers) {
             for (const mod of directChildren(imc, 'modifier', ns)) {
-              const value = mod.getAttribute('value') ?? '';
               const affects = mod.getAttribute('affects') ?? '';
-              if (
-                value === REGIMENTAL_OPTION_ID &&
-                affects.startsWith('self.entries.recursive.')
-              ) {
+              if (affects.startsWith('self.entries.recursive.')) {
                 const targetId = affects.split('.').pop() ?? '';
                 if (targetId && !enabledAffectIds.includes(targetId)) {
                   enabledAffectIds.push(targetId);
+                }
+              } else if (
+                !affects &&
+                mod.getAttribute('type') === 'add' &&
+                mod.getAttribute('field') === 'category'
+              ) {
+                // No `affects` means "add to self" – this is a conditional role category
+                const catId = mod.getAttribute('value') ?? '';
+                if (catId && !conditionalCategoryIds.includes(catId)) {
+                  conditionalCategoryIds.push(catId);
                 }
               }
             }
@@ -234,6 +402,7 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
         categoryLinks,
         isRegimentalLeader,
         enabledAffectIds,
+        conditionalCategoryIds,
       });
     }
   }

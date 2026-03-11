@@ -1,5 +1,19 @@
 // BattleScribe data types for Age of Sigmar 4.0
 
+export interface FactionOption {
+  id: string;
+  name: string;
+  profiles: Profile[];
+  targetGroupId?: string; // For lores: references a group in Lores.cat
+  hidden: boolean;
+}
+
+export interface FactionOptionGroup {
+  id: string;
+  name: string;
+  options: FactionOption[];
+}
+
 export interface CostType {
   id: string;
   name: string;
@@ -107,6 +121,16 @@ export interface EntryLink {
   categoryLinks: CategoryLink[];
   isRegimentalLeader: boolean;
   enabledAffectIds: string[];
+  // Categories dynamically added to this unit when it joins a regiment as a non-leader
+  // (e.g. "Voice of the Everwinter" for Huskard units in an Ogor Mawtribes Frostlord regiment)
+  conditionalCategoryIds: string[];
+}
+
+export interface RenownRegiment {
+  id: string;
+  name: string;      // e.g. "Regiment of Renown: The Blacktalons"
+  profiles: Profile[];
+  allowedCatalogueIds: string[]; // Faction catalogue IDs that may include this regiment
 }
 
 export interface Catalogue {
@@ -118,6 +142,14 @@ export interface Catalogue {
   catalogueLinks: CatalogueLink[];
   selectionEntries: SelectionEntry[];
   entryLinks: EntryLink[];
+  // Faction rules data extracted from sharedSelectionEntryGroups
+  selectionEntryGroups: FactionOptionGroup[]; // All parsed sharedSelectionEntryGroups
+  battleTraitProfiles: Profile[];             // Profiles from 'Battle Traits: X' entry
+  battleFormations: FactionOption[];          // Available battle formations
+  spellLores: FactionOption[];                // Available spell lore options
+  prayerLores: FactionOption[];               // Available prayer lore options
+  manifestationLores: FactionOption[];        // Available manifestation lore options
+  renownRegiments: RenownRegiment[];          // Only populated in Regiments of Renown.cat
 }
 
 // Army builder types
@@ -157,6 +189,14 @@ export interface ArmyList {
   pointsLimit: number;
   regiments: ArmyRegiment[];
   auxiliaryUnits: ArmyUnit[];
+  factionTerrainUnit: ArmyUnit | null;         // Selected faction terrain unit
+  // Faction rules selections
+  generalUnitId: string | null;                // ID of the army unit that is the General
+  battleTraitProfiles: Profile[];              // Battle trait profiles for the selected faction
+  battleFormation: FactionOption | null;       // Selected battle formation
+  spellLore: FactionOption | null;             // Selected spell lore (with loaded profiles)
+  prayerLore: FactionOption | null;            // Selected prayer lore (with loaded profiles)
+  manifestationLore: FactionOption | null;     // Selected manifestation lore (with loaded profiles)
 }
 
 export interface AppState {
