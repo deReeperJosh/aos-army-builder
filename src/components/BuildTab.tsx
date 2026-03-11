@@ -521,6 +521,15 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     }
   };
 
+  // ---- Visible battle formations (filter hidden ones by force entry) ----
+  // Some formations are hidden by default but conditionally shown for specific forces
+  // (e.g. GHB 2025-26 adds extra formations). Include them when the army's force matches.
+  const visibleBattleFormations = (factionCat?.battleFormations ?? []).filter(
+    (f) =>
+      !f.hidden ||
+      (army.forceEntry && f.conditionalForceIds.includes(army.forceEntry.id))
+  );
+
   // ---- Total points ----
   const totalPoints =
     army.regiments.reduce((sum, r) => {
@@ -531,7 +540,11 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       );
     }, 0) +
     army.auxiliaryUnits.reduce((sum, u) => sum + u.pointsCost, 0) +
-    (army.factionTerrainUnit?.pointsCost ?? 0);
+    (army.factionTerrainUnit?.pointsCost ?? 0) +
+    (army.battleFormation?.points ?? 0) +
+    (army.spellLore?.points ?? 0) +
+    (army.prayerLore?.points ?? 0) +
+    (army.manifestationLore?.points ?? 0);
 
   const pointsOver = totalPoints > army.pointsLimit && army.pointsLimit > 0;
 
@@ -581,7 +594,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                 </div>
 
                 {/* Battle Formation */}
-                {factionCat.battleFormations.length > 0 && (
+                {visibleBattleFormations.length > 0 && (
                   <div className="army-option-row">
                     <label className="army-option-label">🏛️ Battle Formation</label>
                     <select
@@ -590,7 +603,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                       onChange={(e) => handleSelectFormation(e.target.value)}
                     >
                       <option value="">— None —</option>
-                      {factionCat.battleFormations.map((f) => (
+                      {visibleBattleFormations.map((f) => (
                         <option key={f.id} value={f.id}>{f.name}</option>
                       ))}
                     </select>
@@ -617,7 +630,9 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     >
                       <option value="">— None —</option>
                       {factionCat.spellLores.map((l) => (
-                        <option key={l.id} value={l.id}>{l.name}</option>
+                        <option key={l.id} value={l.id}>
+                          {l.name}{l.points > 0 ? ` (${l.points} pts)` : ''}
+                        </option>
                       ))}
                     </select>
                     {army.spellLore && (
@@ -643,7 +658,9 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     >
                       <option value="">— None —</option>
                       {factionCat.prayerLores.map((l) => (
-                        <option key={l.id} value={l.id}>{l.name}</option>
+                        <option key={l.id} value={l.id}>
+                          {l.name}{l.points > 0 ? ` (${l.points} pts)` : ''}
+                        </option>
                       ))}
                     </select>
                     {army.prayerLore && (
@@ -669,7 +686,9 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                     >
                       <option value="">— None —</option>
                       {availableManifestationLores.map((l) => (
-                        <option key={l.id} value={l.id}>{l.name}</option>
+                        <option key={l.id} value={l.id}>
+                          {l.name}{l.points > 0 ? ` (${l.points} pts)` : ''}
+                        </option>
                       ))}
                     </select>
                     {army.manifestationLore && (
@@ -694,6 +713,11 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                         {army.factionTerrainUnit.pointsCost > 0 && (
                           <span className="terrain-pts">{army.factionTerrainUnit.pointsCost} pts</span>
                         )}
+                        <button
+                          className="btn btn-xs option-view-btn"
+                          title="View terrain details"
+                          onClick={() => setSelectedDetail({ type: 'unit', unit: army.factionTerrainUnit! })}
+                        >👁</button>
                         <button
                           className="btn btn-xs btn-danger"
                           onClick={() => onUpdateArmy({ factionTerrainUnit: null })}
