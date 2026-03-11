@@ -29,6 +29,8 @@ export interface ParsedList {
   inlineFormationName: string | null;
   regiments: ParsedRegiment[];
   auxiliaryUnits: ParsedUnit[];
+  /** Name of the faction terrain unit, if listed under a "Faction Terrain" section. */
+  factionTerrainName: string | null;
   spellLoreName: string | null;
   prayerLoreName: string | null;
   manifestationLoreName: string | null;
@@ -53,6 +55,7 @@ const END_MARKERS = [
 const GENERALS_REGIMENT_PATTERN = /^general'?s?\s+regiment$/i;
 const REGIMENT_PATTERN = /^regiment\s+\d+$/i;
 const AUXILIARY_SECTION_PATTERN = /^auxiliar(y|ies)$/i;
+const FACTION_TERRAIN_SECTION_PATTERN = /^faction\s+terrain$/i;
 
 // Lore / formation selection lines
 const SPELL_LORE_PATTERN = /^spell\s+lore\s*[-–]\s*(.+)$/i;
@@ -85,6 +88,10 @@ function isRegimentHeader(line: string): boolean {
 
 function isAuxiliaryHeader(line: string): boolean {
   return AUXILIARY_SECTION_PATTERN.test(line);
+}
+
+function isFactionTerrainHeader(line: string): boolean {
+  return FACTION_TERRAIN_SECTION_PATTERN.test(line);
 }
 
 function parseLoreLine(line: string): { type: 'spell' | 'prayer' | 'manifestation' | 'formation'; name: string } | null {
@@ -144,6 +151,7 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
     return (
       isRegimentHeader(line) ||
       isAuxiliaryHeader(line) ||
+      isFactionTerrainHeader(line) ||
       parseUnitLine(line) !== null ||
       parseLoreLine(line) !== null ||
       isEndMarker(line)
@@ -167,12 +175,13 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
   // --- Parse the body ---
   const regiments: ParsedRegiment[] = [];
   const auxiliaryUnits: ParsedUnit[] = [];
+  let factionTerrainName: string | null = null;
   let spellLoreName: string | null = null;
   let prayerLoreName: string | null = null;
   let manifestationLoreName: string | null = null;
   let battleFormationName: string | null = null;
 
-  type Section = 'regiment' | 'auxiliary' | null;
+  type Section = 'regiment' | 'auxiliary' | 'terrain' | null;
   let section: Section = null;
   let currentRegiment: ParsedRegiment | null = null;
 
@@ -215,6 +224,12 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
       continue;
     }
 
+    if (isFactionTerrainHeader(line)) {
+      section = 'terrain';
+      currentRegiment = null;
+      continue;
+    }
+
     // Unit line
     const unit = parseUnitLine(line);
     if (unit) {
@@ -224,6 +239,9 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
         auxiliaryUnits.push(unit);
       }
       // Ignore units that appear before any section header (shouldn't happen in valid lists)
+    } else if (section === 'terrain' && factionTerrainName === null && line.length > 0) {
+      // Faction terrain units often have no points cost — accept a plain name line
+      factionTerrainName = line;
     }
   }
 
@@ -236,6 +254,7 @@ export function parseNewRecruitList(rawText: string): ParsedList | null {
     inlineFormationName,
     regiments,
     auxiliaryUnits,
+    factionTerrainName,
     spellLoreName,
     prayerLoreName,
     manifestationLoreName,
