@@ -19,6 +19,19 @@ export interface UnitOption {
 }
 
 /**
+ * Recursively collects all profiles from a SelectionEntry and all of its sub-entries.
+ * Weapon profiles (Melee Weapon, Ranged Weapon) are stored in nested sub-entries
+ * (unit → model → upgrade), so we must walk the full tree to collect them.
+ */
+export function collectAllProfiles(entry: SelectionEntry): Profile[] {
+  const profiles: Profile[] = [...(entry.profiles ?? [])];
+  for (const sub of entry.subEntries ?? []) {
+    profiles.push(...collectAllProfiles(sub));
+  }
+  return profiles;
+}
+
+/**
  * Returns the units valid for a leader's regiment.
  * A unit is valid if:
  *  - It is not itself a regimental leader, OR it is specifically referenced by the leader

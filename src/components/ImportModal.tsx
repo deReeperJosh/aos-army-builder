@@ -14,6 +14,7 @@ import { parseNewRecruitList, type ParsedList, type ParsedUnit } from '../servic
 import { fetchCatalogue } from '../services/dataFetcher';
 import { KNOWN_FACTIONS, KNOWN_SUBFACTIONS, KNOWN_FORCE_ENTRIES } from '../services/dataFetcher';
 import type { UnitOption } from '../services/regimentService';
+import { collectAllProfiles } from '../services/regimentService';
 import './ImportModal.css';
 
 let nextId = 1;
@@ -77,7 +78,7 @@ function buildUnitOptions(
         name: link.name,
         points: pts,
         entry,
-        profiles: entry?.profiles ?? [],
+        profiles: entry ? collectAllProfiles(entry) : [],
         categoryLinks,
         isRegimentalLeader: link.isRegimentalLeader,
         enabledAffectIds: link.enabledAffectIds,

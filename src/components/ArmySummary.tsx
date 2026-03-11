@@ -2,6 +2,12 @@ import type { ArmyList, ArmyUnit, Profile } from '../types/battlescribe';
 import { ProfileViewer } from './ProfileViewer';
 import './ArmySummary.css';
 
+// Infrastructure category IDs that are app-logic only and should not be displayed as unit keywords
+const EXCLUDED_CATEGORY_IDS = new Set([
+  'd1f3-921c-b403-1106', // Regimental Leader
+  'db3a-7199-c92e-f3cf', // Regimental Option
+]);
+
 interface ArmySummaryProps {
   army: ArmyList;
 }
@@ -126,12 +132,13 @@ function UnitCard({ unit, regimentLabel, isLeader, isGeneral }: UnitCardInfo) {
   const abilityProfiles = unit.profiles.filter(
     (p) => p.typeName !== 'Unit' && p.typeName !== 'Model'
   );
-  const weaponProfiles = unit.profiles.filter(
+  const meleeWeaponProfiles = unit.profiles.filter((p) => p.typeName === 'Melee Weapon');
+  const rangedWeaponProfiles = unit.profiles.filter((p) => p.typeName === 'Ranged Weapon');
+  const otherWeaponProfiles = unit.profiles.filter(
     (p) =>
-      p.typeName === 'Melee Weapon' ||
-      p.typeName === 'Ranged Weapon' ||
-      p.typeName === 'Weapon' ||
-      p.typeName.includes('Weapon')
+      p.typeName !== 'Melee Weapon' &&
+      p.typeName !== 'Ranged Weapon' &&
+      (p.typeName === 'Weapon' || p.typeName.includes('Weapon'))
   );
   const otherProfiles = abilityProfiles.filter(
     (p) =>
@@ -139,6 +146,11 @@ function UnitCard({ unit, regimentLabel, isLeader, isGeneral }: UnitCardInfo) {
       p.typeName !== 'Ranged Weapon' &&
       !p.typeName.includes('Weapon')
   );
+
+  // Collect all unit keywords from categoryLinks, excluding infrastructure-only categories
+  const keywords = unit.categoryLinks
+    .filter((cl) => !EXCLUDED_CATEGORY_IDS.has(cl.targetId) && cl.name.length > 0)
+    .map((cl) => cl.name);
 
   return (
     <div className={`unit-card ${isLeader ? 'unit-card-leader' : ''}`}>
@@ -156,11 +168,31 @@ function UnitCard({ unit, regimentLabel, isLeader, isGeneral }: UnitCardInfo) {
         </div>
       </div>
 
+      {keywords.length > 0 && (
+        <div className="unit-keyword-badges">
+          {keywords.map((kw) => (
+            <span key={kw} className="unit-keyword-badge">{kw}</span>
+          ))}
+        </div>
+      )}
+
       {unitProfile && <UnitStatBlock profile={unitProfile} />}
 
-      {weaponProfiles.length > 0 && (
+      {meleeWeaponProfiles.length > 0 && (
         <div className="unit-card-section">
-          <ProfileViewer profiles={weaponProfiles} compact />
+          <ProfileViewer profiles={meleeWeaponProfiles} compact />
+        </div>
+      )}
+
+      {rangedWeaponProfiles.length > 0 && (
+        <div className="unit-card-section">
+          <ProfileViewer profiles={rangedWeaponProfiles} compact />
+        </div>
+      )}
+
+      {otherWeaponProfiles.length > 0 && (
+        <div className="unit-card-section">
+          <ProfileViewer profiles={otherWeaponProfiles} compact />
         </div>
       )}
 

@@ -13,6 +13,7 @@ import { fetchCatalogue, fetchRenownAllowances } from '../services/dataFetcher';
 import {
   GHB_2025_FORCE_ID,
   getValidRegimentUnits,
+  collectAllProfiles,
   type UnitOption,
 } from '../services/regimentService';
 import { ProfileViewer } from './ProfileViewer';
@@ -158,7 +159,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
         )
         .map((link) => {
           const entry = entryMap.get(link.targetId) ?? null;
-          const profiles = entry?.profiles ?? [];
+          const profiles = entry ? collectAllProfiles(entry) : [];
           const pts = link.costs.find((c) => c.name === 'pts')?.value ?? 0;
           // Merge categoryLinks: link categories first (they can override primary),
           // then append any entry categories not already present (by targetId).
