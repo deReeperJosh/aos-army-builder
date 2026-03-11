@@ -103,6 +103,9 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     const key = army.faction.filename + (army.subfaction?.filename ?? '');
     if (loadedRef.current === key) return;
 
+    // Mark as loading for this key immediately (before any await) so that re-entrant
+    // calls triggered by onUpdateArmy → parent re-render don't start a second load.
+    loadedRef.current = key;
     setLoading(true);
     setError(null);
 
@@ -218,8 +221,9 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
         setRenownCat(renown);
       } catch { /* May not be available */ }
 
-      loadedRef.current = key;
     } catch (err) {
+      // Reset the ref so the user can retry after a failure.
+      loadedRef.current = null;
       setError(err instanceof Error ? err.message : 'Failed to load units');
     } finally {
       setLoading(false);

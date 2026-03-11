@@ -79,6 +79,14 @@ export function ArmyBuilder() {
     );
   }, []);
 
+  // Stable per-active-army update callback so BuildTab's useCallback doesn't thrash.
+  const handleUpdateActiveArmy = useCallback(
+    (updates: Partial<ArmyList>) => {
+      if (activeArmyId) updateArmy(activeArmyId, updates);
+    },
+    [updateArmy, activeArmyId]
+  );
+
   const createArmy = () => {
     const army = createEmptyArmy(`New Army ${armyLists.length + 1}`);
     setArmyLists((prev) => [...prev, army]);
@@ -162,7 +170,7 @@ export function ArmyBuilder() {
             gameSystemLoading={gameSystemLoading}
             gameSystemError={gameSystemError}
             subfactions={subfactionsForFaction}
-            onUpdateArmy={(updates) => updateArmy(activeArmy.id, updates)}
+            onUpdateArmy={handleUpdateActiveArmy}
           />
         )}
       </main>
