@@ -304,7 +304,7 @@ function AbilityCard({
       {keywords && (
         <div className="ability-keywords">
           {keywords.split(',').map((kw) => (
-            <span key={kw.trim()} className="ability-keyword">{kw.trim()}</span>
+            <span key={kw.trim()} className="ability-keyword">{parseKeywords(kw.trim())}</span>
           ))}
         </div>
       )}
