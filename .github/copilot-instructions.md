@@ -60,7 +60,9 @@ src/
 - **Data source**: BattleScribe XML catalogues are fetched at runtime from `/public/data/` (local) or the BSData GitHub API (remote fallback). Responses are cached in-memory.
 - **XML parsing**: `xmlParser.ts` uses the browser's `DOMParser` with namespace-aware queries to convert raw XML into the types defined in `battlescribe.ts`.
 - **State**: All mutable army state lives in `ArmyBuilder.tsx` and is provided to children via the `ArmyStoreContext`. Use `useArmyStore()` to access it from any component.
-- **Regiment system**: A regiment is a leader + up to N companion units. Validity is determined by `getValidRegimentUnits()` in `regimentService.ts`, which checks `EnabledAffectIds` and `ConditionalCategoryIds`.
+- **Regiment system**: A regiment is a leader + up to N companion units. Validity is determined by `getValidRegimentUnits()` in `regimentService.ts`, which checks `EnabledAffectIds` and `ConditionalCategoryIds`. Two force IDs are supported: `GHB_2025_FORCE_ID` and `GHB_2024_FORCE_ID`.
+- **Wargear & enhancements**: Each `ArmyUnit` may carry `selectedWargear` (`SelectedWargear[]`), `selectedEnhancements` (`SelectedEnhancement[]`), and `selectedCommandModels` (`string[]`). Helper functions `collectAllWargearGroups()` and `collectAllCommandModelOptions()` in `regimentService.ts` recurse through `SelectionEntry` sub-entries to gather available options.
+- **Per-roster uniqueness**: Heroic Traits, Artefacts of Power, and similar enhancements are enforced as unique across the entire army — each option may only be assigned to one unit per roster.
 - **Styling**: Each component has a co-located `.css` file. There is no CSS preprocessor or CSS-in-JS library.
 
 ## Coding Conventions
@@ -72,3 +74,4 @@ src/
 - Keep service functions **pure** where possible; side effects (fetch, cache) belong in `services/`.
 - When adding new unit/catalogue types, update `src/types/battlescribe.ts` first.
 - XML attribute names from BattleScribe are **camelCased** in the TypeScript types (e.g., `publicationId` not `publication-id`).
+- New wargear types (`WargearOption`, `WargearOptionGroup`, `SelectedWargear`) and enhancement types (`SelectedEnhancement`) live in `battlescribe.ts` alongside the unit types that reference them.
