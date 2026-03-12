@@ -1,0 +1,502 @@
+/* ---- Spearhead View Layout ---- */
+
+.spearhead-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.sh-header {
+  padding: 8px 0 0;
+}
+
+.sh-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 6px;
+}
+
+.sh-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Selector row */
+.sh-selector-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+}
+
+.sh-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.sh-army-select {
+  max-width: 420px;
+}
+
+.sh-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px dashed var(--color-border);
+}
+
+/* ---- Tabs ---- */
+
+.sh-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0;
+}
+
+.sh-tab-btn {
+  position: relative;
+  padding: 8px 20px;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sh-tab-btn:hover {
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+}
+
+.sh-tab-btn.active {
+  background: var(--color-bg);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  border-bottom-color: var(--color-bg);
+  margin-bottom: -1px;
+  font-weight: 600;
+}
+
+/* ---- Setup tab ---- */
+
+.sh-setup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.sh-setup-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sh-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sh-pick-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-accent);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.sh-trait-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Choice grid (regiment abilities / enhancements) */
+.sh-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.sh-choice-card {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.sh-choice-card:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-elevated);
+}
+
+.sh-choice-card.selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+/* Setup actions */
+.sh-setup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+  align-items: flex-start;
+}
+
+.sh-selections-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---- Summary / Abilities banners ---- */
+
+.sh-summary-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sh-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.sh-summary-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sh-summary-label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.sh-summary-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sh-selection-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+}
+
+.sh-enhancement-badge {
+  background: rgba(96, 165, 250, 0.12);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+}
+
+/* ---- Tab content ---- */
+
+.sh-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---- Unit cards (Army Summary) ---- */
+
+.sh-units-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 16px;
+}
+
+.sh-unit-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.sh-unit-card-general {
+  border-color: var(--color-accent);
+}
+
+.sh-unit-card-header {
+  background: var(--color-surface-elevated);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sh-unit-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sh-general-star {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sh-unit-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.sh-unit-count {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface-deep, #161d2a);
+  border: 1px solid var(--color-border);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+.sh-unit-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Stat block */
+.sh-stat-block {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sh-stat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  border-right: 1px solid var(--color-border);
+}
+
+.sh-stat-box:last-child {
+  border-right: none;
+}
+
+.sh-stat-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sh-stat-key {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Weapon table */
+.sh-weapon-table {
+  border-top: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.sh-weapon-table-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 6px 10px 2px;
+}
+
+.sh-weapon-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.sh-weapon-table th {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-align: center;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sh-weapon-table th:first-child {
+  text-align: left;
+}
+
+.sh-weapon-table td {
+  padding: 4px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border-light, #2d3748);
+  color: var(--color-text);
+}
+
+.sh-weapon-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.sh-weapon-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Unit abilities */
+.sh-unit-abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ---- Ability blocks ---- */
+
+.sh-ability-block {
+  background: var(--color-surface-deep, #161d2a);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.sh-ability-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sh-ability-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.sh-ability-timing {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.sh-ability-text {
+  font-size: 0.82rem;
+  color: var(--color-text);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.sh-ability-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.sh-keyword-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---- Abilities Summary ---- */
+
+.sh-ability-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sh-ability-section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sh-ability-section-title.passive-title {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.sh-ability-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+
+.sh-ability-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sh-ability-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sh-ability-source {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}

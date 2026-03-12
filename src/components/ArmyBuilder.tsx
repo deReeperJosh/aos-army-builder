@@ -9,6 +9,7 @@ import { BuildTab } from './BuildTab';
 import { ArmySummary } from './ArmySummary';
 import { AbilitiesSummary } from './AbilitiesSummary';
 import { ImportModal } from './ImportModal';
+import { SpearheadView } from './SpearheadView';
 import './ArmyBuilder.css';
 
 let nextId = 1;
@@ -52,7 +53,7 @@ function getArmyUnitCount(army: ArmyList): number {
   );
 }
 
-type View = 'home' | 'builder';
+type View = 'home' | 'builder' | 'spearhead';
 
 export function ArmyBuilder() {
   const [armyLists, setArmyLists] = useState<ArmyList[]>([]);
@@ -134,6 +135,12 @@ export function ArmyBuilder() {
             >
               My Armies
             </button>
+            <button
+              className={`nav-btn ${view === 'spearhead' ? 'active' : ''}`}
+              onClick={() => setView('spearhead')}
+            >
+              ⚔ Spearhead
+            </button>
             {activeArmy && (
               <button
                 className={`nav-btn ${view === 'builder' ? 'active' : ''}`}
@@ -162,6 +169,8 @@ export function ArmyBuilder() {
             onImportArmy={() => setShowImportModal(true)}
           />
         )}
+
+        {view === 'spearhead' && <SpearheadView />}
 
         {view === 'builder' && activeArmy && (
           <BuilderView
