@@ -9,12 +9,14 @@ import type {
   SelectionEntry,
   FactionOption,
   Profile,
+  SelectedWargear,
+  SelectedEnhancement,
 } from '../types/battlescribe';
 import { parseNewRecruitList, type ParsedList, type ParsedUnit } from '../services/listParser';
 import { fetchCatalogue } from '../services/dataFetcher';
 import { KNOWN_FACTIONS, KNOWN_SUBFACTIONS, KNOWN_FORCE_ENTRIES } from '../services/dataFetcher';
 import type { UnitOption } from '../services/regimentService';
-import { collectAllProfiles } from '../services/regimentService';
+import { collectAllProfiles, collectAllWargearGroups, collectAllCommandModelOptions } from '../services/regimentService';
 import './ImportModal.css';
 
 let nextId = 1;
@@ -32,6 +34,9 @@ const infraPatterns = [
   'Battle Traits', 'Battle Wound', 'Warlord', 'Renown',
   'Configuration', 'Army List', 'Allegiance',
 ];
+
+// BattleScribe category ID for FACTION TERRAIN units (mirrors BuildTab)
+const FACTION_TERRAIN_CAT_ID = 'cdd6-ffa1-9b32-4cb8';
 
 function buildUnitOptions(
   factionCat: Awaited<ReturnType<typeof fetchCatalogue>>,
@@ -83,6 +88,9 @@ function buildUnitOptions(
         isRegimentalLeader: link.isRegimentalLeader,
         enabledAffectIds: link.enabledAffectIds,
         conditionalCategoryIds: link.conditionalCategoryIds,
+        wargearGroups: entry ? collectAllWargearGroups(entry) : [],
+        enhancementGroupRefs: link.enhancementGroupRefs,
+        commandModelOptions: entry ? collectAllCommandModelOptions(entry) : [],
       };
     });
 
@@ -100,6 +108,17 @@ function buildUnitOptions(
 }
 
 function makeArmyUnit(unit: UnitOption): ArmyUnit {
+  // Set default wargear: first option in each wargear group
+  const selectedWargear: SelectedWargear[] = unit.wargearGroups.map((group) => {
+    const firstOpt = group.options[0];
+    return {
+      groupId: group.id,
+      optionId: firstOpt?.id ?? '',
+      optionName: firstOpt?.name ?? '',
+      profiles: firstOpt?.profiles ?? [],
+    };
+  }).filter((w) => w.optionId !== '');
+
   return {
     id: generateId(),
     entryLinkId: unit.linkId,
@@ -109,7 +128,18 @@ function makeArmyUnit(unit: UnitOption): ArmyUnit {
     profiles: unit.profiles,
     categoryLinks: unit.categoryLinks,
     isRegimentalLeader: unit.isRegimentalLeader,
+    selectedWargear,
+    selectedEnhancements: [],
+    selectedCommandModels: [],
   };
+}
+
+/**
+ * Strip leading count prefix ("1x ", "2x ", etc.) from an upgrade name,
+ * then normalize whitespace.
+ */
+function normalizeUpgradeName(raw: string): string {
+  return raw.replace(/^\d+x\s*/i, '').trim();
 }
 
 /** Find a UnitOption by name (case-insensitive). Returns the best match or null. */
@@ -261,6 +291,77 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
     warnings.push(`Could not find subfaction "${parsed.subfactionName}". Please set it manually.`);
   }
 
+  // --- Helper: apply parsed upgrades (wargear / enhancements / command models) to an ArmyUnit ---
+  // Track which enhancement groups have already been assigned to any unit in this import
+  // to enforce roster-scope max-1 uniqueness (Heroic Traits, Artefacts of Power, Big Names, etc.).
+  const claimedEnhancementGroups = new Set<string>();
+
+  const applyUpgrades = (unit: ArmyUnit, opt: UnitOption, upgrades: string[]): ArmyUnit => {
+    if (!upgrades || upgrades.length === 0) return unit;
+
+    let selectedWargear: SelectedWargear[] = [...(unit.selectedWargear ?? [])];
+    let selectedEnhancements: SelectedEnhancement[] = [...(unit.selectedEnhancements ?? [])];
+    let selectedCommandModels: string[] = [...(unit.selectedCommandModels ?? [])];
+    const addedEnhancementGroups = new Set(selectedEnhancements.map((e) => e.groupName));
+
+    for (const raw of upgrades) {
+      const upgradeName = normalizeUpgradeName(raw);
+      if (!upgradeName || upgradeName.toLowerCase() === 'general') continue;
+
+      // Try to match as a wargear option
+      let matched = false;
+      for (const group of opt.wargearGroups) {
+        const wOpt = group.options.find((o) => o.name.toLowerCase() === upgradeName.toLowerCase());
+        if (wOpt) {
+          selectedWargear = selectedWargear
+            .filter((w) => w.groupId !== group.id)
+            .concat({ groupId: group.id, optionId: wOpt.id, optionName: wOpt.name, profiles: wOpt.profiles });
+          matched = true;
+          break;
+        }
+      }
+      if (matched) continue;
+
+      // Try to match as a command model option
+      const cmMatch = opt.commandModelOptions.find((m) => m.toLowerCase() === upgradeName.toLowerCase());
+      if (cmMatch && !selectedCommandModels.includes(cmMatch)) {
+        selectedCommandModels = [...selectedCommandModels, cmMatch];
+        matched = true;
+      }
+      if (matched) continue;
+
+      // Try to match as an enhancement option from the faction catalogue
+      if (factionCat) {
+        for (const ref of opt.enhancementGroupRefs) {
+          if (addedEnhancementGroups.has(ref.name)) continue; // already selected one for this group
+          // Roster-scope uniqueness: skip if another unit in this import already claimed this group
+          if (claimedEnhancementGroups.has(ref.name)) continue;
+          const group = factionCat.selectionEntryGroups.find((g) => g.id === ref.targetId);
+          if (!group) continue;
+          const eOpt = group.options.find((o) => o.name.toLowerCase() === upgradeName.toLowerCase());
+          if (eOpt) {
+            const enhancement: SelectedEnhancement = {
+              groupName: ref.name,
+              optionId: eOpt.id,
+              optionName: eOpt.name,
+              profiles: eOpt.profiles,
+            };
+            selectedEnhancements = [...selectedEnhancements, enhancement];
+            addedEnhancementGroups.add(ref.name);
+            claimedEnhancementGroups.add(ref.name); // mark group as used army-wide
+            matched = true;
+            break;
+          }
+        }
+      }
+      if (!matched) {
+        // Upgrade not recognised — silently skip (could be General indicator, unknown option, etc.)
+      }
+    }
+
+    return { ...unit, selectedWargear, selectedEnhancements, selectedCommandModels };
+  };
+
   // --- Helper: resolve a parsed unit to an ArmyUnit ---
   const resolveUnit = (parsed: ParsedUnit): ArmyUnit | null => {
     const opt = findUnit(parsed.name, allUnitOptions);
@@ -268,7 +369,8 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
       warnings.push(`Unit not found: "${parsed.name}" (${parsed.points} pts). Skipped.`);
       return null;
     }
-    return makeArmyUnit(opt);
+    const unit = makeArmyUnit(opt);
+    return applyUpgrades(unit, opt, parsed.upgrades ?? []);
   };
 
   // --- Build regiments ---
@@ -290,7 +392,8 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
     const leaderOpt = findUnit(leaderParsed.name, allUnitOptions);
 
     if (leaderOpt) {
-      const leaderUnit = makeArmyUnit(leaderOpt);
+      let leaderUnit = makeArmyUnit(leaderOpt);
+      leaderUnit = applyUpgrades(leaderUnit, leaderOpt, leaderParsed.upgrades ?? []);
       if (leaderOpt.isRegimentalLeader) {
         regiment.leader = leaderUnit;
         // Mark the general (first unit in the General's Regiment)
@@ -385,7 +488,18 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
     pointsLimit: parsed.pointsLimit,
     regiments,
     auxiliaryUnits,
-    factionTerrainUnit: null,
+    factionTerrainUnit: (() => {
+      if (!parsed.factionTerrainName) return null;
+      const terrainOptions = allUnitOptions.filter((u) =>
+        u.categoryLinks.some((cl) => cl.targetId === FACTION_TERRAIN_CAT_ID)
+      );
+      const opt = findUnit(parsed.factionTerrainName, terrainOptions);
+      if (!opt) {
+        warnings.push(`Faction terrain "${parsed.factionTerrainName}" not found. Please set it manually.`);
+        return null;
+      }
+      return makeArmyUnit(opt);
+    })(),
     generalUnitId,
     battleTraitProfiles,
     battleFormation,
@@ -528,6 +642,9 @@ export function ImportModal({ onImport, onClose }: ImportModalProps) {
                           )}
                         </td>
                       </tr>
+                      {preview.factionTerrainName && (
+                        <tr><td>Faction Terrain</td><td><strong>{preview.factionTerrainName}</strong></td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>

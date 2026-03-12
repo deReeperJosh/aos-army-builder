@@ -3,9 +3,16 @@
 export interface FactionOption {
   id: string;
   name: string;
+  /** Base points cost (ignoring force-specific modifier overrides). */
+  points: number;
   profiles: Profile[];
   targetGroupId?: string; // For lores: references a group in Lores.cat
   hidden: boolean;
+  /**
+   * Force entry IDs (from the GST) whose selection makes this otherwise-hidden option visible.
+   * Populated from XML modifiers that set hidden=false conditioned on a specific force entry.
+   */
+  conditionalForceIds: string[];
 }
 
 export interface FactionOptionGroup {
@@ -100,6 +107,33 @@ export interface CatalogueLink {
   type: string;
 }
 
+export interface WargearOption {
+  id: string;
+  name: string;
+  profiles: Profile[];
+}
+
+export interface WargearOptionGroup {
+  id: string;
+  name: string;
+  options: WargearOption[];
+}
+
+export interface SelectedWargear {
+  groupId: string;
+  optionId: string;
+  optionName: string;
+  profiles: Profile[];
+}
+
+export interface SelectedEnhancement {
+  /** "Heroic Traits", "Artefacts of Power", "Big Names", etc. */
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  profiles: Profile[];
+}
+
 export interface SelectionEntry {
   id: string;
   name: string;
@@ -109,6 +143,10 @@ export interface SelectionEntry {
   costs: Cost[];
   categoryLinks: CategoryLink[];
   subEntries: SelectionEntry[];
+  /** Wargear option groups (e.g. "Wargear Options" with Chaintrap / Blood Vulture). */
+  wargearGroups: WargearOptionGroup[];
+  /** Optional command model names (e.g. ["Champion", "Musician", "Standard Bearer"]). */
+  commandModelOptions: string[];
 }
 
 export interface EntryLink {
@@ -124,6 +162,8 @@ export interface EntryLink {
   // Categories dynamically added to this unit when it joins a regiment as a non-leader
   // (e.g. "Voice of the Everwinter" for Huskard units in an Ogor Mawtribes Frostlord regiment)
   conditionalCategoryIds: string[];
+  /** Enhancement group references nested inside this entry link (Heroic Traits, Artefacts, Big Names, etc.) */
+  enhancementGroupRefs: { name: string; targetId: string }[];
 }
 
 export interface RenownRegiment {
@@ -165,6 +205,12 @@ export interface ArmyUnit {
   profiles: Profile[];
   categoryLinks: CategoryLink[];
   isRegimentalLeader: boolean;
+  /** Currently selected wargear options (one per wargear group). */
+  selectedWargear?: SelectedWargear[];
+  /** Currently selected enhancements (Heroic Traits, Artefacts of Power, Big Names, etc.). */
+  selectedEnhancements?: SelectedEnhancement[];
+  /** Currently selected command models (Champion, Musician, Standard Bearer, etc.). */
+  selectedCommandModels?: string[];
 }
 
 export interface ArmyRegiment {

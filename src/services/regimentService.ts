@@ -1,6 +1,7 @@
-import type { SelectionEntry, Profile, CategoryLink } from '../types/battlescribe';
+import type { SelectionEntry, Profile, CategoryLink, WargearOptionGroup } from '../types/battlescribe';
 
 export const GHB_2025_FORCE_ID = 'f079-501a-2738-6845';
+export const GHB_2024_FORCE_ID = 'f079-501a-2738-6844';
 export const REGIMENTAL_LEADER_CAT = 'd1f3-921c-b403-1106';
 export const REGIMENTAL_OPTION_CAT = 'db3a-7199-c92e-f3cf';
 
@@ -16,6 +17,12 @@ export interface UnitOption {
   enabledAffectIds: string[];
   // Categories conditionally gained by this unit when it joins a regiment as a non-leader
   conditionalCategoryIds: string[];
+  /** Wargear option groups available for this unit (e.g. "Wargear Options": Chaintrap / Blood Vulture). */
+  wargearGroups: WargearOptionGroup[];
+  /** Enhancement group references (Heroic Traits, Artefacts of Power, Big Names) from the entry link. */
+  enhancementGroupRefs: { name: string; targetId: string }[];
+  /** Optional command model names (e.g. ["Champion", "Musician", "Standard Bearer"]). */
+  commandModelOptions: string[];
 }
 
 /**
@@ -29,6 +36,32 @@ export function collectAllProfiles(entry: SelectionEntry): Profile[] {
     profiles.push(...collectAllProfiles(sub));
   }
   return profiles;
+}
+
+/**
+ * Recursively collects all wargear option groups from a SelectionEntry and its sub-entries.
+ * Wargear groups are typically on the model-level sub-entry (one level below the unit entry).
+ */
+export function collectAllWargearGroups(entry: SelectionEntry): WargearOptionGroup[] {
+  const groups: WargearOptionGroup[] = [...(entry.wargearGroups ?? [])];
+  for (const sub of entry.subEntries ?? []) {
+    groups.push(...collectAllWargearGroups(sub));
+  }
+  return groups;
+}
+
+/**
+ * Recursively collects all command model option names from a SelectionEntry and its sub-entries.
+ * Command Models groups (Champion, Musician, Standard Bearer) are typically on the model sub-entry.
+ */
+export function collectAllCommandModelOptions(entry: SelectionEntry): string[] {
+  const options: string[] = [...(entry.commandModelOptions ?? [])];
+  for (const sub of entry.subEntries ?? []) {
+    for (const opt of collectAllCommandModelOptions(sub)) {
+      if (!options.includes(opt)) options.push(opt);
+    }
+  }
+  return options;
 }
 
 /**

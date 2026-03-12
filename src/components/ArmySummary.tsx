@@ -128,13 +128,20 @@ export function ArmySummary({ army }: ArmySummaryProps) {
 }
 
 function UnitCard({ unit, regimentLabel, isLeader, isGeneral }: UnitCardInfo) {
-  const unitProfile = unit.profiles.find((p) => p.typeName === 'Unit');
-  const abilityProfiles = unit.profiles.filter(
+  // Combine base profiles with selected wargear profiles for display
+  const allProfiles = [
+    ...unit.profiles,
+    ...(unit.selectedWargear ?? []).flatMap((w) => w.profiles),
+    ...(unit.selectedEnhancements ?? []).flatMap((e) => e.profiles),
+  ];
+
+  const unitProfile = allProfiles.find((p) => p.typeName === 'Unit');
+  const abilityProfiles = allProfiles.filter(
     (p) => p.typeName !== 'Unit' && p.typeName !== 'Model'
   );
-  const meleeWeaponProfiles = unit.profiles.filter((p) => p.typeName === 'Melee Weapon');
-  const rangedWeaponProfiles = unit.profiles.filter((p) => p.typeName === 'Ranged Weapon');
-  const otherWeaponProfiles = unit.profiles.filter(
+  const meleeWeaponProfiles = abilityProfiles.filter((p) => p.typeName === 'Melee Weapon');
+  const rangedWeaponProfiles = abilityProfiles.filter((p) => p.typeName === 'Ranged Weapon');
+  const otherWeaponProfiles = abilityProfiles.filter(
     (p) =>
       p.typeName !== 'Melee Weapon' &&
       p.typeName !== 'Ranged Weapon' &&
@@ -172,6 +179,21 @@ function UnitCard({ unit, regimentLabel, isLeader, isGeneral }: UnitCardInfo) {
         <div className="unit-keyword-badges">
           {keywords.map((kw) => (
             <span key={kw} className="unit-keyword-badge">{kw}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Selected wargear, enhancement, and command model badges */}
+      {((unit.selectedWargear?.length ?? 0) > 0 || (unit.selectedEnhancements?.length ?? 0) > 0 || (unit.selectedCommandModels?.length ?? 0) > 0) && (
+        <div className="unit-upgrade-summary">
+          {(unit.selectedWargear ?? []).map((w) => (
+            <span key={w.groupId} className="unit-upgrade-tag">⚔ {w.optionName}</span>
+          ))}
+          {(unit.selectedEnhancements ?? []).map((e) => (
+            <span key={e.groupName} className="unit-upgrade-tag unit-enhancement-tag">✦ {e.optionName}</span>
+          ))}
+          {(unit.selectedCommandModels ?? []).map((m) => (
+            <span key={m} className="unit-upgrade-tag unit-command-tag">★ {m}</span>
           ))}
         </div>
       )}
