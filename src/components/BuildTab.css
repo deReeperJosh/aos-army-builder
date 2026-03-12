@@ -551,3 +551,61 @@
   padding: 2px 6px;
   font-size: 0.75rem;
 }
+
+/* ---- Unit upgrade badges in army structure rows ---- */
+.regiment-unit-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.unit-upgrade-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.unit-upgrade-badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+  padding: 1px 5px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.unit-upgrade-badge-enhancement {
+  color: var(--color-gold, #d4a017);
+  background: rgba(212, 160, 23, 0.12);
+}
+
+.unit-upgrade-badge-command {
+  color: var(--color-text-muted, #888);
+  background: rgba(128, 128, 128, 0.12);
+}
+
+/* ---- Wargear / Enhancement selection in detail panel ---- */
+.unit-wargear-section {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.unit-wargear-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+/* Message shown when an enhancement group is exhausted (taken by another unit) */
+.enhancement-taken-msg {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--color-text-muted, #888);
+}

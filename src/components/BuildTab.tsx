@@ -8,12 +8,14 @@ import type {
   FactionOption,
   Profile,
   RenownRegiment,
+  SelectedWargear,
 } from '../types/battlescribe';
 import { fetchCatalogue, fetchRenownAllowances } from '../services/dataFetcher';
 import {
-  GHB_2025_FORCE_ID,
   getValidRegimentUnits,
   collectAllProfiles,
+  collectAllWargearGroups,
+  collectAllCommandModelOptions,
   type UnitOption,
 } from '../services/regimentService';
 import { ProfileViewer } from './ProfileViewer';
@@ -102,8 +104,8 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
 
   const loadedRef = useRef<string | null>(null);
 
-  const isGHB = army.forceEntry?.id === GHB_2025_FORCE_ID;
-  const supportsLores = army.forceEntry ? GHB_FORCE_IDS.has(army.forceEntry.id) : false;
+  const isGHB = army.forceEntry ? GHB_FORCE_IDS.has(army.forceEntry.id) : false;
+  const supportsLores = isGHB;
 
   const loadUnits = useCallback(async () => {
     if (!army.faction) return;
@@ -191,6 +193,9 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
             isRegimentalLeader: link.isRegimentalLeader,
             enabledAffectIds: link.enabledAffectIds,
             conditionalCategoryIds: link.conditionalCategoryIds,
+            wargearGroups: entry ? collectAllWargearGroups(entry) : [],
+            enhancementGroupRefs: link.enhancementGroupRefs,
+            commandModelOptions: entry ? collectAllCommandModelOptions(entry) : [],
           };
         });
 
@@ -332,6 +337,25 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
 
   const selectedDetailId = selectedDetail?.type === 'unit' ? selectedDetail.unit.id : null;
 
+  // ---- Unit update (wargear / enhancements) ----
+  const handleUpdateUnit = (unitId: string, updates: Partial<ArmyUnit>) => {
+    const applyUpdate = (units: ArmyUnit[]) =>
+      units.map((u) => (u.id === unitId ? { ...u, ...updates } : u));
+
+    onUpdateArmy({
+      regiments: army.regiments.map((r) => ({
+        ...r,
+        leader: r.leader?.id === unitId ? { ...r.leader, ...updates } : r.leader,
+        units: applyUpdate(r.units),
+      })),
+      auxiliaryUnits: applyUpdate(army.auxiliaryUnits),
+      factionTerrainUnit:
+        army.factionTerrainUnit?.id === unitId
+          ? { ...army.factionTerrainUnit, ...updates }
+          : army.factionTerrainUnit,
+    });
+  };
+
   // ---- Army mutation helpers ----
 
   const addRegiment = () => {
@@ -365,16 +389,32 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     }
   };
 
-  const makeArmyUnit = (unit: UnitOption): ArmyUnit => ({
-    id: generateId(),
-    entryLinkId: unit.linkId,
-    targetId: unit.targetId,
-    name: unit.name,
-    pointsCost: unit.points,
-    profiles: unit.profiles,
-    categoryLinks: unit.categoryLinks,
-    isRegimentalLeader: unit.isRegimentalLeader,
-  });
+  const makeArmyUnit = (unit: UnitOption): ArmyUnit => {
+    // Set default wargear: first option in each wargear group
+    const selectedWargear: SelectedWargear[] = unit.wargearGroups.map((group) => {
+      const firstOpt = group.options[0];
+      return {
+        groupId: group.id,
+        optionId: firstOpt?.id ?? '',
+        optionName: firstOpt?.name ?? '',
+        profiles: firstOpt?.profiles ?? [],
+      };
+    }).filter((w) => w.optionId !== '');
+
+    return {
+      id: generateId(),
+      entryLinkId: unit.linkId,
+      targetId: unit.targetId,
+      name: unit.name,
+      pointsCost: unit.points,
+      profiles: unit.profiles,
+      categoryLinks: unit.categoryLinks,
+      isRegimentalLeader: unit.isRegimentalLeader,
+      selectedWargear,
+      selectedEnhancements: [],
+      selectedCommandModels: [],
+    };
+  };
 
   const setRegimentLeader = (regimentId: string, unit: UnitOption) => {
     const armyUnit = makeArmyUnit(unit);
@@ -529,6 +569,48 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
       !f.hidden ||
       (army.forceEntry && f.conditionalForceIds.includes(army.forceEntry.id))
   );
+
+  // ---- Resolve current selected unit (always fresh from army state) ----
+  const selectedUnit: ArmyUnit | null = (() => {
+    if (selectedDetail?.type !== 'unit') return null;
+    const id = selectedDetail.unit.id;
+    for (const r of army.regiments) {
+      if (r.leader?.id === id) return r.leader;
+      const u = r.units.find((u) => u.id === id);
+      if (u) return u;
+    }
+    const aux = army.auxiliaryUnits.find((u) => u.id === id);
+    if (aux) return aux;
+    if (army.factionTerrainUnit?.id === id) return army.factionTerrainUnit;
+    return null;
+  })();
+
+  // Find the UnitOption corresponding to the currently selected unit (for wargear/enhancement data)
+  const selectedUnitOption: UnitOption | null = selectedUnit
+    ? allUnits.find((u) => u.linkId === selectedUnit.entryLinkId) ?? null
+    : null;
+
+  // ---- Army-wide enhancement usage (for roster-scoped uniqueness enforcement) ----
+  // Collect all enhancements selected by units OTHER than the currently-selected unit.
+  // Enhancement groups (Heroic Traits, Artefacts of Power, Big Names, etc.) have
+  // roster-scope max-1 constraints in the BattleScribe data, so only one unit per army
+  // may hold any enhancement from each group.
+  const allArmyUnits: ArmyUnit[] = [
+    ...army.regiments.flatMap((r) => [r.leader, ...r.units].filter(Boolean) as ArmyUnit[]),
+    ...army.auxiliaryUnits,
+    ...(army.factionTerrainUnit ? [army.factionTerrainUnit] : []),
+  ];
+  // Map: groupName → set of optionIds taken by units other than the selected unit
+  const usedEnhancementsByGroup = new Map<string, Set<string>>();
+  for (const u of allArmyUnits) {
+    if (selectedUnit && u.id === selectedUnit.id) continue;
+    for (const enh of u.selectedEnhancements ?? []) {
+      if (!usedEnhancementsByGroup.has(enh.groupName)) {
+        usedEnhancementsByGroup.set(enh.groupName, new Set());
+      }
+      usedEnhancementsByGroup.get(enh.groupName)!.add(enh.optionId);
+    }
+  }
 
   // ---- Total points ----
   const totalPoints =
@@ -903,11 +985,130 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
             </div>
             <div className="build-detail-body">
               {selectedDetail.type === 'unit' ? (
-                selectedDetail.unit.profiles.length > 0 ? (
-                  <ProfileViewer profiles={selectedDetail.unit.profiles} />
-                ) : (
-                  <p className="build-detail-empty">No profile data available for this unit.</p>
-                )
+                <>
+                  {/* Wargear Options */}
+                  {selectedUnitOption && selectedUnitOption.wargearGroups.length > 0 && selectedUnit && (
+                    <div className="unit-wargear-section">
+                      <div className="unit-wargear-title">Wargear Options</div>
+                      {selectedUnitOption.wargearGroups.map((group) => {
+                        const current = (selectedUnit.selectedWargear ?? []).find((w) => w.groupId === group.id);
+                        return (
+                          <div key={group.id} className="army-option-row">
+                            <label className="army-option-label">{group.name}</label>
+                            <select
+                              className="form-select form-select-sm"
+                              value={current?.optionId ?? ''}
+                              onChange={(e) => {
+                                const opt = group.options.find((o) => o.id === e.target.value);
+                                if (!opt || !selectedUnit) return;
+                                const newWargear = (selectedUnit.selectedWargear ?? []).filter((w) => w.groupId !== group.id);
+                                newWargear.push({ groupId: group.id, optionId: opt.id, optionName: opt.name, profiles: opt.profiles });
+                                handleUpdateUnit(selectedUnit.id, { selectedWargear: newWargear });
+                              }}
+                            >
+                              {group.options.map((opt) => (
+                                <option key={opt.id} value={opt.id}>{opt.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Enhancement Options (Heroic Traits, Artefacts of Power, Big Names) */}
+                  {selectedUnitOption && selectedUnitOption.enhancementGroupRefs.length > 0 && selectedUnit && factionCat && (
+                    <div className="unit-wargear-section">
+                      <div className="unit-wargear-title">Enhancements</div>
+                      {selectedUnitOption.enhancementGroupRefs.map((ref) => {
+                        const group = factionCat.selectionEntryGroups.find((g) => g.id === ref.targetId);
+                        if (!group || group.options.length === 0) return null;
+                        const currentEnh = (selectedUnit.selectedEnhancements ?? []).find((e) => e.groupName === ref.name);
+                        // Roster-scoped uniqueness: check if another unit has already taken any
+                        // option from this enhancement group (max 1 per army for Heroic Traits,
+                        // Artefacts of Power, Big Names, etc.).
+                        const takenByOther = usedEnhancementsByGroup.get(ref.name);
+                        const groupTakenByOther = takenByOther !== undefined && takenByOther.size > 0;
+                        return (
+                          <div key={ref.targetId} className="army-option-row">
+                            <label className="army-option-label">{ref.name}</label>
+                            {groupTakenByOther && !currentEnh ? (
+                              <span className="enhancement-taken-msg">— taken by another unit —</span>
+                            ) : (
+                              <select
+                                className="form-select form-select-sm"
+                                value={currentEnh?.optionId ?? ''}
+                                onChange={(e) => {
+                                  if (!selectedUnit) return;
+                                  const newEnhancements = (selectedUnit.selectedEnhancements ?? []).filter((en) => en.groupName !== ref.name);
+                                  if (e.target.value) {
+                                    const opt = group.options.find((o) => o.id === e.target.value);
+                                    if (opt) {
+                                      newEnhancements.push({ groupName: ref.name, optionId: opt.id, optionName: opt.name, profiles: opt.profiles });
+                                    }
+                                  }
+                                  handleUpdateUnit(selectedUnit.id, { selectedEnhancements: newEnhancements });
+                                }}
+                              >
+                                <option value="">— None —</option>
+                                {group.options.filter((o) => !o.hidden).map((opt) => {
+                                  // Also disable individual options already taken by other units
+                                  const optTakenByOther = takenByOther?.has(opt.id) ?? false;
+                                  return (
+                                    <option key={opt.id} value={opt.id} disabled={optTakenByOther}>
+                                      {opt.name}{optTakenByOther ? ' (taken)' : ''}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Command Models (Champion, Musician, Standard Bearer) */}
+                  {selectedUnitOption && selectedUnitOption.commandModelOptions.length > 0 && selectedUnit && (
+                    <div className="unit-wargear-section">
+                      <div className="unit-wargear-title">Command Models</div>
+                      {selectedUnitOption.commandModelOptions.map((opt) => {
+                        const isChecked = (selectedUnit.selectedCommandModels ?? []).includes(opt);
+                        return (
+                          <div key={opt} className="army-option-row">
+                            <label className="army-option-label">{opt}</label>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (!selectedUnit) return;
+                                const current = selectedUnit.selectedCommandModels ?? [];
+                                const next = e.target.checked
+                                  ? [...current, opt]
+                                  : current.filter((m) => m !== opt);
+                                handleUpdateUnit(selectedUnit.id, { selectedCommandModels: next });
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Unit Profiles */}
+                  {(() => {
+                    const combinedProfiles = [
+                      ...(selectedUnit?.profiles ?? []),
+                      ...(selectedUnit?.selectedWargear ?? []).flatMap((w) => w.profiles),
+                      ...(selectedUnit?.selectedEnhancements ?? []).flatMap((e) => e.profiles),
+                    ];
+                    return combinedProfiles.length > 0 ? (
+                      <ProfileViewer profiles={combinedProfiles} />
+                    ) : (
+                      <p className="build-detail-empty">No profile data available for this unit.</p>
+                    );
+                  })()}
+                </>
               ) : (
                 selectedDetail.option.profiles.length > 0 ? (
                   <ProfileViewer profiles={selectedDetail.option.profiles} />
@@ -977,6 +1178,29 @@ function PickerItem({ unit, expandedUnit, onExpand, onPick }: PickerItemProps) {
           <ProfileViewer profiles={unit.profiles} compact />
         </div>
       )}
+    </div>
+  );
+}
+
+// ---- UnitUpgradeBadges: shows selected wargear, enhancement, and command model tags on unit rows ----
+
+function UnitUpgradeBadges({ unit }: { unit: ArmyUnit }) {
+  const wargearBadges = (unit.selectedWargear ?? []).map((w) => w.optionName);
+  const enhancementBadges = (unit.selectedEnhancements ?? []).map((e) => e.optionName);
+  const commandModelBadges = (unit.selectedCommandModels ?? []);
+  const allBadges = [...wargearBadges, ...enhancementBadges, ...commandModelBadges];
+  if (allBadges.length === 0) return null;
+  return (
+    <div className="unit-upgrade-badges">
+      {wargearBadges.map((badge) => (
+        <span key={badge} className="unit-upgrade-badge">{badge}</span>
+      ))}
+      {enhancementBadges.map((badge) => (
+        <span key={badge} className="unit-upgrade-badge unit-upgrade-badge-enhancement">✦ {badge}</span>
+      ))}
+      {commandModelBadges.map((badge) => (
+        <span key={badge} className="unit-upgrade-badge unit-upgrade-badge-command">★ {badge}</span>
+      ))}
     </div>
   );
 }
@@ -1053,9 +1277,12 @@ function GHBStructure({
                 className={`regiment-unit-row selectable${selectedDetailId === regiment.leader.id ? ' unit-selected' : ''}`}
                 onClick={() => onSelectUnit(regiment.leader!)}
               >
-                <span className="regiment-unit-name leader-name">
-                  ⭐ {regiment.leader.name}
-                </span>
+                <div className="regiment-unit-info">
+                  <span className="regiment-unit-name leader-name">
+                    ⭐ {regiment.leader.name}
+                  </span>
+                  <UnitUpgradeBadges unit={regiment.leader} />
+                </div>
                 {regiment.leader.pointsCost > 0 && (
                   <span className="regiment-unit-pts">{regiment.leader.pointsCost} pts</span>
                 )}
@@ -1095,7 +1322,10 @@ function GHBStructure({
                 className={`regiment-unit-row selectable${selectedDetailId === unit.id ? ' unit-selected' : ''}`}
                 onClick={() => onSelectUnit(unit)}
               >
-                <span className="regiment-unit-name">{unit.name}</span>
+                <div className="regiment-unit-info">
+                  <span className="regiment-unit-name">{unit.name}</span>
+                  <UnitUpgradeBadges unit={unit} />
+                </div>
                 {unit.pointsCost > 0 && (
                   <span className="regiment-unit-pts">{unit.pointsCost} pts</span>
                 )}
@@ -1150,7 +1380,10 @@ function GHBStructure({
             className={`regiment-unit-row selectable${selectedDetailId === unit.id ? ' unit-selected' : ''}`}
             onClick={() => onSelectUnit(unit)}
           >
-            <span className="regiment-unit-name">{unit.name}</span>
+            <div className="regiment-unit-info">
+              <span className="regiment-unit-name">{unit.name}</span>
+              <UnitUpgradeBadges unit={unit} />
+            </div>
             {unit.pointsCost > 0 && (
               <span className="regiment-unit-pts">{unit.pointsCost} pts</span>
             )}
