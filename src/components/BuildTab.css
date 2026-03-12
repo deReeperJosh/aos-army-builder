@@ -602,3 +602,10 @@
   color: var(--color-text-muted);
   margin-bottom: 6px;
 }
+
+/* Message shown when an enhancement group is exhausted (taken by another unit) */
+.enhancement-taken-msg {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--color-text-muted, #888);
+}

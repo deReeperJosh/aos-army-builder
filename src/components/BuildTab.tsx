@@ -590,6 +590,28 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
     ? allUnits.find((u) => u.linkId === selectedUnit.entryLinkId) ?? null
     : null;
 
+  // ---- Army-wide enhancement usage (for roster-scoped uniqueness enforcement) ----
+  // Collect all enhancements selected by units OTHER than the currently-selected unit.
+  // Enhancement groups (Heroic Traits, Artefacts of Power, Big Names, etc.) have
+  // roster-scope max-1 constraints in the BattleScribe data, so only one unit per army
+  // may hold any enhancement from each group.
+  const allArmyUnits: ArmyUnit[] = [
+    ...army.regiments.flatMap((r) => [r.leader, ...r.units].filter(Boolean) as ArmyUnit[]),
+    ...army.auxiliaryUnits,
+    ...(army.factionTerrainUnit ? [army.factionTerrainUnit] : []),
+  ];
+  // Map: groupName → set of optionIds taken by units other than the selected unit
+  const usedEnhancementsByGroup = new Map<string, Set<string>>();
+  for (const u of allArmyUnits) {
+    if (selectedUnit && u.id === selectedUnit.id) continue;
+    for (const enh of u.selectedEnhancements ?? []) {
+      if (!usedEnhancementsByGroup.has(enh.groupName)) {
+        usedEnhancementsByGroup.set(enh.groupName, new Set());
+      }
+      usedEnhancementsByGroup.get(enh.groupName)!.add(enh.optionId);
+    }
+  }
+
   // ---- Total points ----
   const totalPoints =
     army.regiments.reduce((sum, r) => {
@@ -1002,29 +1024,44 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                         const group = factionCat.selectionEntryGroups.find((g) => g.id === ref.targetId);
                         if (!group || group.options.length === 0) return null;
                         const currentEnh = (selectedUnit.selectedEnhancements ?? []).find((e) => e.groupName === ref.name);
+                        // Roster-scoped uniqueness: check if another unit has already taken any
+                        // option from this enhancement group (max 1 per army for Heroic Traits,
+                        // Artefacts of Power, Big Names, etc.).
+                        const takenByOther = usedEnhancementsByGroup.get(ref.name);
+                        const groupTakenByOther = takenByOther !== undefined && takenByOther.size > 0;
                         return (
                           <div key={ref.targetId} className="army-option-row">
                             <label className="army-option-label">{ref.name}</label>
-                            <select
-                              className="form-select form-select-sm"
-                              value={currentEnh?.optionId ?? ''}
-                              onChange={(e) => {
-                                if (!selectedUnit) return;
-                                const newEnhancements = (selectedUnit.selectedEnhancements ?? []).filter((en) => en.groupName !== ref.name);
-                                if (e.target.value) {
-                                  const opt = group.options.find((o) => o.id === e.target.value);
-                                  if (opt) {
-                                    newEnhancements.push({ groupName: ref.name, optionId: opt.id, optionName: opt.name, profiles: opt.profiles });
+                            {groupTakenByOther && !currentEnh ? (
+                              <span className="enhancement-taken-msg">— taken by another unit —</span>
+                            ) : (
+                              <select
+                                className="form-select form-select-sm"
+                                value={currentEnh?.optionId ?? ''}
+                                onChange={(e) => {
+                                  if (!selectedUnit) return;
+                                  const newEnhancements = (selectedUnit.selectedEnhancements ?? []).filter((en) => en.groupName !== ref.name);
+                                  if (e.target.value) {
+                                    const opt = group.options.find((o) => o.id === e.target.value);
+                                    if (opt) {
+                                      newEnhancements.push({ groupName: ref.name, optionId: opt.id, optionName: opt.name, profiles: opt.profiles });
+                                    }
                                   }
-                                }
-                                handleUpdateUnit(selectedUnit.id, { selectedEnhancements: newEnhancements });
-                              }}
-                            >
-                              <option value="">— None —</option>
-                              {group.options.filter((o) => !o.hidden).map((opt) => (
-                                <option key={opt.id} value={opt.id}>{opt.name}</option>
-                              ))}
-                            </select>
+                                  handleUpdateUnit(selectedUnit.id, { selectedEnhancements: newEnhancements });
+                                }}
+                              >
+                                <option value="">— None —</option>
+                                {group.options.filter((o) => !o.hidden).map((opt) => {
+                                  // Also disable individual options already taken by other units
+                                  const optTakenByOther = takenByOther?.has(opt.id) ?? false;
+                                  return (
+                                    <option key={opt.id} value={opt.id} disabled={optTakenByOther}>
+                                      {opt.name}{optTakenByOther ? ' (taken)' : ''}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            )}
                           </div>
                         );
                       })}

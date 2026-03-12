@@ -292,6 +292,10 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
   }
 
   // --- Helper: apply parsed upgrades (wargear / enhancements / command models) to an ArmyUnit ---
+  // Track which enhancement groups have already been assigned to any unit in this import
+  // to enforce roster-scope max-1 uniqueness (Heroic Traits, Artefacts of Power, Big Names, etc.).
+  const claimedEnhancementGroups = new Set<string>();
+
   const applyUpgrades = (unit: ArmyUnit, opt: UnitOption, upgrades: string[]): ArmyUnit => {
     if (!upgrades || upgrades.length === 0) return unit;
 
@@ -330,6 +334,8 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
       if (factionCat) {
         for (const ref of opt.enhancementGroupRefs) {
           if (addedEnhancementGroups.has(ref.name)) continue; // already selected one for this group
+          // Roster-scope uniqueness: skip if another unit in this import already claimed this group
+          if (claimedEnhancementGroups.has(ref.name)) continue;
           const group = factionCat.selectionEntryGroups.find((g) => g.id === ref.targetId);
           if (!group) continue;
           const eOpt = group.options.find((o) => o.name.toLowerCase() === upgradeName.toLowerCase());
@@ -342,6 +348,7 @@ async function buildArmyFromParsed(parsed: ParsedList): Promise<{ army: ArmyList
             };
             selectedEnhancements = [...selectedEnhancements, enhancement];
             addedEnhancementGroups.add(ref.name);
+            claimedEnhancementGroups.add(ref.name); // mark group as used army-wide
             matched = true;
             break;
           }
