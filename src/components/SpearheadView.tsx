@@ -338,7 +338,7 @@ export function SpearheadView() {
   const [activeTab, setActiveTab] = useState<SpearheadTab>('setup');
 
   const army: SpearheadArmy | null =
-    SPEARHEAD_ARMIES.find((a) => a.id === selectedArmyId) ?? null;
+    SPEARHEAD_ARMIES.find((a) => a.id === selectedArmyId) || null;
 
   const handleArmyChange = (id: string) => {
     setSelectedArmyId(id);
