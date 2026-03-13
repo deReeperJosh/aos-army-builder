@@ -1111,4 +1111,241 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
+  // ---- Daughters of Khaine (Melusai Ironscale) ----
+  {
+    id: 'daughters-of-khaine',
+    name: 'Daughters of Khaine',
+    battleTraits: [
+      {
+        name: 'Blood Rites',
+        timing: 'Start of Battle Round',
+        effect:
+          'All friendly units gain the Blood Rites passive ability that corresponds to the current battle round number (units keep all Blood Rites abilities gained in previous battle rounds):\n\u2022 Round 1 \u2013 Quickening Bloodlust: Add 1 to run rolls for this unit.\n\u2022 Round 2 \u2013 Headlong Fury: Add 1 to charge rolls for this unit.\n\u2022 Round 3 \u2013 Zealot\u2019s Rage: Add 1 to hit rolls for combat attacks made by this unit.\n\u2022 Round 4 \u2013 Slaughterer\u2019s Strength: Add 1 to wound rolls for combat attacks made by this unit.',
+      },
+    ],
+    regimentalAbilities: [
+      {
+        name: 'Murderous Epiphany',
+        timing: 'Once Per Battle, Your Hero Phase',
+        effect:
+          'All friendly units gain the Blood Rites passive ability they would have gained at the start of the next battle round (they keep this ability for the rest of the battle, but they do not gain it for a second time at the start of the next battle round).',
+      },
+      {
+        name: 'Blessing of Khaine',
+        timing: 'Any Combat Phase',
+        declare: 'Pick a friendly unit wholly within 12\u201d of your general. You cannot pick your general.',
+        effect: 'Add 1 to ward rolls for that unit this phase.',
+      },
+    ],
+    enhancements: [
+      {
+        name: 'Bathed in Blood',
+        timing: 'Passive',
+        effect: 'Each time a model is slain by your general, Heal (1) your general.',
+      },
+      {
+        name: 'Fuelled by Revenge',
+        timing: 'Passive',
+        effect:
+          'Add 1 to the Rend characteristic of melee weapons used by friendly Blood Stalkers units while they are wholly within 12\u201d of your general.',
+      },
+      {
+        name: 'Flask of Shademist',
+        timing: 'Once Per Battle, Any Combat Phase',
+        effect:
+          'Until the end of the phase, subtract 1 from hit rolls for attacks that target friendly units while they are wholly within 12\u201d of your general.',
+      },
+      {
+        name: 'Zealous Orator',
+        timing: 'Your Hero Phase',
+        declare:
+          'Pick a friendly unit wholly within 9\u201d of your general that is not in combat. Roll a dice for each slain model from that unit.',
+        effect: 'For each 5+, you can return 1 slain model to that unit.',
+      },
+    ],
+    units: [
+      {
+        id: 'melusai-ironscale',
+        name: 'Melusai Ironscale',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Infantry'],
+        move: '8\u201d',
+        health: '6',
+        save: '5+',
+        ward: '6+',
+        control: '2',
+        rangedWeapons: [
+          {
+            name: 'Keldrisaith',
+            type: 'Ranged',
+            range: '12\u201d',
+            attacks: '2',
+            hit: '3+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Keldrisaith',
+            type: 'Melee',
+            attacks: '6',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '2',
+          },
+        ],
+        abilities: [
+          {
+            name: 'All-out Slaughter',
+            timing: 'Your Hero Phase',
+            declare:
+              'Pick a friendly unit wholly within 12\u201d of this unit to be the target. You cannot pick this unit.',
+            effect: 'Add 1 to the Attacks characteristic of the target\u2019s melee weapons for the rest of the turn.',
+          },
+          {
+            name: 'Turned to Crystal',
+            timing: 'End of Any Turn',
+            declare:
+              'Pick an enemy unit within 1\u201d of this unit to be the target and roll a dice.',
+            effect: 'On a 2+, inflict 1 mortal damage on the target.',
+          },
+        ],
+      },
+      {
+        id: 'blood-stalkers',
+        name: 'Blood Stalkers',
+        count: '5x',
+        isGeneral: false,
+        keywords: ['Infantry'],
+        move: '8\u201d',
+        health: '2',
+        save: '6+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Heartseeker Bow',
+            type: 'Ranged',
+            range: '18\u201d',
+            attacks: '3',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '1',
+            ability: 'Crit (Auto-wound)',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Scianlar',
+            type: 'Melee',
+            attacks: '2',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Heartseekers',
+            timing: 'Passive',
+            effect:
+              'Shooting attacks made by this unit score critical hits on unmodified hit rolls of 5+ if this unit did not use a MOVE ability in the same turn.',
+          },
+        ],
+      },
+      {
+        id: 'doomfire-warlocks',
+        name: 'Doomfire Warlocks',
+        count: '5x',
+        isGeneral: false,
+        keywords: ['Cavalry', 'Reinforcement'],
+        move: '14\u201d',
+        health: '3',
+        save: '5+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Doomfire Crossbow',
+            type: 'Ranged',
+            range: '10\u201d',
+            attacks: '2',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Cursed Scimitar',
+            type: 'Melee',
+            attacks: '2',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '1',
+          },
+          {
+            name: "Dark Steed\u2019s Vicious Bite",
+            type: 'Melee',
+            attacks: '2',
+            hit: '5+',
+            wound: '3+',
+            rend: '-',
+            damage: '1',
+            ability: 'Companion',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Doomfire',
+            timing: 'Your Hero Phase',
+            declare:
+              'Pick a visible enemy unit within 12\u201d of this unit to be the target, then make a casting roll of 2D6.',
+            effect: 'On a 6+, inflict D3 mortal damage on the target.',
+          },
+        ],
+      },
+      {
+        id: 'witch-aelves',
+        name: 'Witch Aelves',
+        count: '5x | 5x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Reinforcement'],
+        move: '6\u201d',
+        health: '1',
+        save: '6+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Paired Scians\u00e1',
+            type: 'Melee',
+            attacks: '3',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: '1',
+            ability: 'Crit (Auto-wound)',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Frenzied Fervour',
+            timing: 'Passive',
+            effect:
+              'Add 1 to the Rend characteristic of this unit\u2019s melee weapons if it charged in the same turn.',
+          },
+        ],
+      },
+    ],
+  },
 ];
