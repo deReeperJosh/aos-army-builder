@@ -163,7 +163,7 @@ export interface EntryLink {
   // (e.g. "Voice of the Everwinter" for Huskard units in an Ogor Mawtribes Frostlord regiment)
   conditionalCategoryIds: string[];
   /** Enhancement group references nested inside this entry link (Heroic Traits, Artefacts, Big Names, etc.) */
-  enhancementGroupRefs: { name: string; targetId: string }[];
+  enhancementGroupRefs: { name: string; targetId: string; hidden: boolean; conditionalForceIds: string[] }[];
 }
 
 export interface RenownRegiment {

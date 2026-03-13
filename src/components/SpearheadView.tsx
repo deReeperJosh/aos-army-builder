@@ -131,12 +131,15 @@ function WeaponTable({ weapons, title }: { weapons: SpearheadWeapon[]; title: st
 }
 
 function AbilityBlock({ ability }: { ability: SpearheadAbility }) {
+  const oncePerMatch = /once per (battle|turn|phase)/i.exec(ability.timing);
+  const oncePer = oncePerMatch ? oncePerMatch[0] : null;
   return (
     <div className="sh-ability-block">
       <div className="sh-ability-header">
         <span className="sh-ability-name">{ability.name}</span>
         <span className="sh-ability-timing">{ability.timing}</span>
       </div>
+      {oncePer && <div className="sh-once-per-badge">{oncePer.toUpperCase()}</div>}
       {ability.declare && (
         <p className="sh-ability-text">
           <strong>Declare:</strong> {ability.declare}
@@ -220,12 +223,15 @@ interface AbilityEntry {
 }
 
 function AbilityCard({ entry }: { entry: AbilityEntry }) {
+  const oncePerMatch = /once per (battle|turn|phase)/i.exec(entry.ability.timing);
+  const oncePer = oncePerMatch ? oncePerMatch[0] : null;
   return (
     <div className="sh-ability-card">
       <div className="sh-ability-card-header">
         <span className="sh-ability-name">{entry.ability.name}</span>
         <span className="sh-ability-source">{entry.sourceName}</span>
       </div>
+      {oncePer && <div className="sh-once-per-badge">{oncePer.toUpperCase()}</div>}
       {entry.ability.declare && (
         <p className="sh-ability-text">
           <strong>Declare:</strong> {entry.ability.declare}

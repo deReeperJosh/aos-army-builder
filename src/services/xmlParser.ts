@@ -527,7 +527,7 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
       // Parse nested entryLinks that reference enhancement selectionEntryGroups
       // (e.g. "Heroic Traits", "Artefacts of Power", "Big Names" on hero units).
       const ENHANCEMENT_NAMES = new Set(['Heroic Traits', 'Artefacts of Power', 'Big Names']);
-      const enhancementGroupRefs: { name: string; targetId: string }[] = [];
+      const enhancementGroupRefs: { name: string; targetId: string; hidden: boolean; conditionalForceIds: string[] }[] = [];
       const innerElContainers = directChildren(el, 'entryLinks', ns);
       for (const innerElc of innerElContainers) {
         for (const innerEl of directChildren(innerElc, 'entryLink', ns)) {
@@ -535,7 +535,29 @@ function parseEntryLinks(parent: Element, ns: string): EntryLink[] {
           const innerName = decodeHtmlEntities(innerEl.getAttribute('name') ?? '');
           if (!ENHANCEMENT_NAMES.has(innerName)) continue;
           const innerTargetId = innerEl.getAttribute('targetId') ?? '';
-          if (innerTargetId) enhancementGroupRefs.push({ name: innerName, targetId: innerTargetId });
+          if (!innerTargetId) continue;
+          const isHidden = innerEl.getAttribute('hidden') === 'true';
+          const forceIds: string[] = [];
+          if (isHidden) {
+            const modContainers = directChildren(innerEl, 'modifiers', ns);
+            for (const mc of modContainers) {
+              for (const mod of directChildren(mc, 'modifier', ns)) {
+                if (
+                  mod.getAttribute('type') === 'set' &&
+                  mod.getAttribute('field') === 'hidden' &&
+                  mod.getAttribute('value') === 'false'
+                ) {
+                  for (const cond of Array.from(mod.getElementsByTagNameNS(ns, 'condition'))) {
+                    if (cond.getAttribute('type') === 'instanceOf') {
+                      const childId = cond.getAttribute('childId');
+                      if (childId) forceIds.push(childId);
+                    }
+                  }
+                }
+              }
+            }
+          }
+          enhancementGroupRefs.push({ name: innerName, targetId: innerTargetId, hidden: isHidden, conditionalForceIds: forceIds });
         }
       }
 

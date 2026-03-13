@@ -564,11 +564,11 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   // ---- Visible battle formations (filter hidden ones by force entry) ----
   // Some formations are hidden by default but conditionally shown for specific forces
   // (e.g. GHB 2025-26 adds extra formations). Include them when the army's force matches.
-  const visibleBattleFormations = (factionCat?.battleFormations ?? []).filter(
-    (f) =>
-      !f.hidden ||
-      (army.forceEntry && f.conditionalForceIds.includes(army.forceEntry.id))
-  );
+  // Helper: returns true if an option/ref is not hidden, or is conditionally visible for the current force
+  const isVisibleForForce = (item: { hidden: boolean; conditionalForceIds: string[] }) =>
+    !item.hidden || (army.forceEntry !== null && item.conditionalForceIds.includes(army.forceEntry.id));
+
+  const visibleBattleFormations = (factionCat?.battleFormations ?? []).filter(isVisibleForForce);
 
   // ---- Resolve current selected unit (always fresh from army state) ----
   const selectedUnit: ArmyUnit | null = (() => {
@@ -1017,56 +1017,64 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                   )}
 
                   {/* Enhancement Options (Heroic Traits, Artefacts of Power, Big Names) */}
-                  {selectedUnitOption && selectedUnitOption.enhancementGroupRefs.length > 0 && selectedUnit && factionCat && (
-                    <div className="unit-wargear-section">
-                      <div className="unit-wargear-title">Enhancements</div>
-                      {selectedUnitOption.enhancementGroupRefs.map((ref) => {
-                        const group = factionCat.selectionEntryGroups.find((g) => g.id === ref.targetId);
-                        if (!group || group.options.length === 0) return null;
-                        const currentEnh = (selectedUnit.selectedEnhancements ?? []).find((e) => e.groupName === ref.name);
-                        // Roster-scoped uniqueness: check if another unit has already taken any
-                        // option from this enhancement group (max 1 per army for Heroic Traits,
-                        // Artefacts of Power, Big Names, etc.).
-                        const takenByOther = usedEnhancementsByGroup.get(ref.name);
-                        const groupTakenByOther = takenByOther !== undefined && takenByOther.size > 0;
-                        return (
-                          <div key={ref.targetId} className="army-option-row">
-                            <label className="army-option-label">{ref.name}</label>
-                            {groupTakenByOther && !currentEnh ? (
-                              <span className="enhancement-taken-msg">— taken by another unit —</span>
-                            ) : (
-                              <select
-                                className="form-select form-select-sm"
-                                value={currentEnh?.optionId ?? ''}
-                                onChange={(e) => {
-                                  if (!selectedUnit) return;
-                                  const newEnhancements = (selectedUnit.selectedEnhancements ?? []).filter((en) => en.groupName !== ref.name);
-                                  if (e.target.value) {
-                                    const opt = group.options.find((o) => o.id === e.target.value);
-                                    if (opt) {
-                                      newEnhancements.push({ groupName: ref.name, optionId: opt.id, optionName: opt.name, profiles: opt.profiles });
+                  {selectedUnitOption && selectedUnit && factionCat && (() => {
+                    // Filter enhancement groups: hide groups that are force-specific and don't match the current force
+                    const visibleEnhancementRefs = selectedUnitOption.enhancementGroupRefs.filter(isVisibleForForce);
+                    if (visibleEnhancementRefs.length === 0) return null;
+                    return (
+                      <div className="unit-wargear-section">
+                        <div className="unit-wargear-title">Enhancements</div>
+                        {visibleEnhancementRefs.map((ref) => {
+                          const group = factionCat.selectionEntryGroups.find((g) => g.id === ref.targetId);
+                          if (!group) return null;
+                          // Filter options: show non-hidden options plus conditionally-visible ones for the current force
+                          const visibleOptions = group.options.filter(isVisibleForForce);
+                          if (visibleOptions.length === 0) return null;
+                          const currentEnh = (selectedUnit.selectedEnhancements ?? []).find((e) => e.groupName === ref.name);
+                          // Roster-scoped uniqueness: check if another unit has already taken any
+                          // option from this enhancement group (max 1 per army for Heroic Traits,
+                          // Artefacts of Power, Big Names, etc.).
+                          const takenByOther = usedEnhancementsByGroup.get(ref.name);
+                          const groupTakenByOther = takenByOther !== undefined && takenByOther.size > 0;
+                          return (
+                            <div key={ref.targetId} className="army-option-row">
+                              <label className="army-option-label">{ref.name}</label>
+                              {groupTakenByOther && !currentEnh ? (
+                                <span className="enhancement-taken-msg">— taken by another unit —</span>
+                              ) : (
+                                <select
+                                  className="form-select form-select-sm"
+                                  value={currentEnh?.optionId ?? ''}
+                                  onChange={(e) => {
+                                    if (!selectedUnit) return;
+                                    const newEnhancements = (selectedUnit.selectedEnhancements ?? []).filter((en) => en.groupName !== ref.name);
+                                    if (e.target.value) {
+                                      const opt = visibleOptions.find((o) => o.id === e.target.value);
+                                      if (opt) {
+                                        newEnhancements.push({ groupName: ref.name, optionId: opt.id, optionName: opt.name, profiles: opt.profiles });
+                                      }
                                     }
-                                  }
-                                  handleUpdateUnit(selectedUnit.id, { selectedEnhancements: newEnhancements });
-                                }}
-                              >
-                                <option value="">— None —</option>
-                                {group.options.filter((o) => !o.hidden).map((opt) => {
-                                  // Also disable individual options already taken by other units
-                                  const optTakenByOther = takenByOther?.has(opt.id) ?? false;
-                                  return (
-                                    <option key={opt.id} value={opt.id} disabled={optTakenByOther}>
-                                      {opt.name}{optTakenByOther ? ' (taken)' : ''}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                                    handleUpdateUnit(selectedUnit.id, { selectedEnhancements: newEnhancements });
+                                  }}
+                                >
+                                  <option value="">— None —</option>
+                                  {visibleOptions.map((opt) => {
+                                    // Also disable individual options already taken by other units
+                                    const optTakenByOther = takenByOther?.has(opt.id) ?? false;
+                                    return (
+                                      <option key={opt.id} value={opt.id} disabled={optTakenByOther}>
+                                        {opt.name}{optTakenByOther ? ' (taken)' : ''}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
 
                   {/* Command Models (Champion, Musician, Standard Bearer) */}
                   {selectedUnitOption && selectedUnitOption.commandModelOptions.length > 0 && selectedUnit && (
