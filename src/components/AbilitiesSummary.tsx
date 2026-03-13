@@ -165,7 +165,7 @@ export function AbilitiesSummary({ army }: AbilitiesSummaryProps) {
   const passiveAbilities: AbilityEntry[] = [];
   const activatedAbilities: AbilityEntry[] = [];
 
-  const classifyUnitProfile = (profile: Profile, unitLabel: string) => {
+  const classifyAbilityProfile = (profile: Profile, unitLabel: string) => {
     if (profile.hidden) return;
     const typeName = profile.typeName ?? '';
     if (typeName === 'Ability (Passive)') {
@@ -185,19 +185,19 @@ export function AbilitiesSummary({ army }: AbilitiesSummaryProps) {
     const unitLabel = isGeneral ? `${unit.name} ⭐` : unit.name;
     // Base unit profiles
     for (const profile of unit.profiles) {
-      classifyUnitProfile(profile, unitLabel);
+      classifyAbilityProfile(profile, unitLabel);
     }
     // Wargear profiles (abilities from selected wargear options)
     for (const wargear of unit.selectedWargear ?? []) {
       for (const profile of wargear.profiles) {
-        classifyUnitProfile(profile, unitLabel);
+        classifyAbilityProfile(profile, unitLabel);
       }
     }
     // Enhancement profiles (Heroic Traits, Artefacts of Power, Big Names, etc.)
     for (const enhancement of unit.selectedEnhancements ?? []) {
       const enhLabel = `${unitLabel} • ${enhancement.optionName}`;
       for (const profile of enhancement.profiles) {
-        classifyUnitProfile(profile, enhLabel);
+        classifyAbilityProfile(profile, enhLabel);
       }
     }
   }

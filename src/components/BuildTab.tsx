@@ -564,11 +564,11 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
   // ---- Visible battle formations (filter hidden ones by force entry) ----
   // Some formations are hidden by default but conditionally shown for specific forces
   // (e.g. GHB 2025-26 adds extra formations). Include them when the army's force matches.
-  const visibleBattleFormations = (factionCat?.battleFormations ?? []).filter(
-    (f) =>
-      !f.hidden ||
-      (army.forceEntry && f.conditionalForceIds.includes(army.forceEntry.id))
-  );
+  // Helper: returns true if an option/ref is not hidden, or is conditionally visible for the current force
+  const isVisibleForForce = (item: { hidden: boolean; conditionalForceIds: string[] }) =>
+    !item.hidden || (army.forceEntry !== null && item.conditionalForceIds.includes(army.forceEntry.id));
+
+  const visibleBattleFormations = (factionCat?.battleFormations ?? []).filter(isVisibleForForce);
 
   // ---- Resolve current selected unit (always fresh from army state) ----
   const selectedUnit: ArmyUnit | null = (() => {
@@ -1019,9 +1019,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                   {/* Enhancement Options (Heroic Traits, Artefacts of Power, Big Names) */}
                   {selectedUnitOption && selectedUnit && factionCat && (() => {
                     // Filter enhancement groups: hide groups that are force-specific and don't match the current force
-                    const visibleEnhancementRefs = selectedUnitOption.enhancementGroupRefs.filter(
-                      (ref) => !ref.hidden || (army.forceEntry && ref.conditionalForceIds.includes(army.forceEntry.id))
-                    );
+                    const visibleEnhancementRefs = selectedUnitOption.enhancementGroupRefs.filter(isVisibleForForce);
                     if (visibleEnhancementRefs.length === 0) return null;
                     return (
                       <div className="unit-wargear-section">
@@ -1030,9 +1028,7 @@ export function BuildTab({ army, onUpdateArmy }: BuildTabProps) {
                           const group = factionCat.selectionEntryGroups.find((g) => g.id === ref.targetId);
                           if (!group) return null;
                           // Filter options: show non-hidden options plus conditionally-visible ones for the current force
-                          const visibleOptions = group.options.filter(
-                            (o) => !o.hidden || (army.forceEntry && o.conditionalForceIds.includes(army.forceEntry.id))
-                          );
+                          const visibleOptions = group.options.filter(isVisibleForForce);
                           if (visibleOptions.length === 0) return null;
                           const currentEnh = (selectedUnit.selectedEnhancements ?? []).find((e) => e.groupName === ref.name);
                           // Roster-scoped uniqueness: check if another unit has already taken any
