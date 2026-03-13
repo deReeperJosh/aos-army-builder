@@ -6,10 +6,10 @@ import type { SpearheadArmy } from '../types/spearhead';
  * Data for Ossiarch Bonereapers is taken from the reference image.
  */
 export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
-  // ---- Blades of Khorne (Mortal) ----
+  // ---- Blades of Khorne - Bloodbound Gore Pilgrims ----
   {
-    id: 'blades-of-khorne',
-    name: 'Blades of Khorne',
+    id: 'blades-of-khorne-bloodbound-gore-pilgrims',
+    name: 'Blades of Khorne - Bloodbound Gore Pilgrims',
     battleTraits: [
       {
         name: 'The Blood Tithe',
@@ -218,10 +218,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Karanak's Hunt (Khorne Daemons) ----
+  // ---- Blades of Khorne - Fangs of the Blood God ----
   {
-    id: 'karanaks-hunt',
-    name: "Karanak\u2019s Hunt",
+    id: 'blades-of-khorne-fangs-of-the-blood-god',
+    name: "Blades of Khorne - Fangs of the Blood God",
     battleTraits: [
       {
         name: 'The Quarry',
@@ -379,10 +379,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Cities of Sigmar (Freeguild Cavalier-Marshal) ----
+  // ---- Cities of Sigmar - Castelite Company ----
   {
-    id: 'cities-of-sigmar-freeguild',
-    name: 'Cities of Sigmar (Freeguild)',
+    id: 'cities-of-sigmar-castelite-company',
+    name: 'Cities of Sigmar - Castelite Company',
     battleTraits: [
       {
         name: "The Officar\u2019s Order",
@@ -619,10 +619,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Cities of Sigmar (Wildercorps / Fusil-Major) ----
+  // ---- Cities of Sigmar - Fusil-Platoon ----
   {
-    id: 'cities-of-sigmar-wildercorps',
-    name: 'Cities of Sigmar (Wildercorps)',
+    id: 'cities-of-sigmar-fusil-platoon',
+    name: 'Cities of Sigmar - Fusil-Platoon',
     battleTraits: [
       {
         name: 'Fortify Position',
@@ -855,10 +855,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Daughters of Khaine (Melusai Ironscale) ----
+  // ---- Daughters of Khaine - Heartflayers Troupe ----
   {
-    id: 'daughters-of-khaine',
-    name: 'Daughters of Khaine',
+    id: 'daughters-of-khaine-heartflayers-troupe',
+    name: 'Daughters of Khaine - Heartflayers Troupe',
     battleTraits: [
       {
         name: 'Blood Rites',
@@ -1092,10 +1092,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Disciples of Tzeentch (Magister on Disc of Tzeentch) ----
+  // ---- Disciples of Tzeentch - Fluxblade Coven ----
   {
-    id: 'disciples-of-tzeentch-magister',
-    name: 'Disciples of Tzeentch (Magister)',
+    id: 'disciples-of-tzeentch-fluxblade-coven',
+    name: 'Disciples of Tzeentch - Fluxblade Coven',
     battleTraits: [
       {
         name: 'Masters of Destiny',
@@ -1355,10 +1355,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Disciples of Tzeentch (Tzaangor Shaman) ----
+  // ---- Disciples of Tzeentch - Tzaangor Warflock ----
   {
-    id: 'disciples-of-tzeentch-shaman',
-    name: 'Disciples of Tzeentch (Tzaangor Shaman)',
+    id: 'disciples-of-tzeentch-tzaangor-warflock',
+    name: 'Disciples of Tzeentch - Tzaangor Warflock',
     battleTraits: [
       {
         name: 'Predict the Future',
@@ -1600,10 +1600,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Flesh-Eater Courts (Abhorrant Archregent) ----
+  // ---- Flesh-Eater Courts - Carrion Retainers ----
   {
-    id: 'flesh-eater-courts-archregent',
-    name: 'Flesh-Eater Courts (Archregent)',
+    id: 'flesh-eater-courts-carrion-retainers',
+    name: 'Flesh-Eater Courts - Carrion Retainers',
     battleTraits: [
       {
         name: 'Noble Deeds',
@@ -1818,10 +1818,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Flesh-Eater Courts (Abhorrant Gorewarden) ----
+  // ---- Flesh-Eater Courts - Charnel Watch ----
   {
-    id: 'flesh-eater-courts-gorewarden',
-    name: 'Flesh-Eater Courts (Gorewarden)',
+    id: 'flesh-eater-courts-charnel-watch',
+    name: 'Flesh-Eater Courts - Charnel Watch',
     battleTraits: [
       {
         name: 'Delusions and Madness',
@@ -2036,10 +2036,10 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
-  // ---- Fyreslayers (Saga Axeband) ----
+  // ---- Fyreslayers - Saga Axeband ----
   {
     id: 'fyreslayers-saga-axeband',
-    name: 'Fyreslayers (Saga Axeband)',
+    name: 'Fyreslayers - Saga Axeband',
     battleTraits: [
       {
         name: 'Awaken the Runes',
@@ -2050,170 +2050,107 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
           'On a 1-5, the rune\u2019s standard effect applies. On a 6, the rune\u2019s enhanced effect applies as well. The effects last until the start of your next turn.',
       },
       {
-        name: 'Rune of Fiery Determination',
+        name: 'Rune of Fury',
         timing: 'Ur-Gold Rune',
         effect:
-          'Standard (1\u20135): Add 1 to save rolls for friendly units.\nEnhanced (6): Friendly units have WARD (6+).',
+          'Standard (1\u20135): Add 1 to hit rolls for combat attacks made by friendly units.\nEnhanced (6): In addition, add 1 to the Attacks characteristic of your units\' melee weapons.',
         keywords: ['Ur-Gold Rune'],
       },
       {
         name: 'Rune of Searing Heat',
         timing: 'Ur-Gold Rune',
         effect:
-          'Standard (1\u20135): Add 1 to wound rolls for attacks made with friendly units\u2019 melee weapons.\nEnhanced (6): Add 1 to the Rend characteristic of friendly units\u2019 melee weapons.',
+          'Standard (1\u20135): Add 1 to the Rend characteristic of your units\' melee weapons.\nEnhanced (6): In addition, add 1 to the Damage characteristic of your units\' melee weapons',
         keywords: ['Ur-Gold Rune'],
       },
       {
-        name: 'Rune of Fury',
+        name: 'Rune of Fiery Determination',
         timing: 'Ur-Gold Rune',
         effect:
-          'Standard (1\u20135): Add 1 to the Attacks characteristic of melee weapons used by friendly units.\nEnhanced (6): Melee weapons used by friendly units have Crit (2 Hits).',
-        keywords: ['Ur-Gold Rune'],
-      },
-      {
-        name: 'Rune of the Forge-Fire',
-        timing: 'Ur-Gold Rune',
-        effect:
-          'Standard (1\u20135): Add 1 to chanting rolls for friendly PRIEST units.\nEnhanced (6): Friendly PRIEST units can attempt to unbind 1 spell as if they were WIZARDS.',
+          'Standard (1\u20135): Your units have WARD (5+).\nEnhanced (6): In addition, add 1 to save rolls for friendly units.',
         keywords: ['Ur-Gold Rune'],
       },
       {
         name: 'Rune of Relentless Zeal',
         timing: 'Ur-Gold Rune',
         effect:
-          'Standard (1\u20135): Add 2\u201d to the Move characteristic of friendly units.\nEnhanced (6): Friendly units can use a RUN ability and still use CHARGE abilities in the same turn.',
-        keywords: ['Ur-Gold Rune'],
-      },
-      {
-        name: 'Rune of Awakened Steel',
-        timing: 'Ur-Gold Rune',
-        effect:
-          'Standard (1\u20135): Add 1 to the Rend characteristic of melee weapons used by friendly units.\nEnhanced (6): Add 1 to the Damage characteristic of melee weapons used by friendly units.',
+          'Standard (1\u20135): Add 2\u201d to the Move characteristic of friendly units.\nEnhanced (6): In addition, add 2 to charge rolls for your units.',
         keywords: ['Ur-Gold Rune'],
       },
     ],
     regimentalAbilities: [
       {
-        name: 'Fyrewall',
-        timing: 'Passive',
+        name: 'Magmic Tunnels',
+        timing: 'Once Per Battle, Start of the First Battle Round',
         effect:
-          'Friendly units that charged this turn have WARD (6+) until the end of that turn.',
+          'Pick up to 2 friendly units. Remove them from the battlefield and set them up again anywhere not in combat and are within 10" of any enemy units. on the battlefield more than 6" from all enemy units.',
       },
       {
-        name: 'Oathbound',
-        timing: 'Passive',
+        name: 'Fyresteel Throwing Axes',
+        timing: 'Once Per Turn (Army), Your Shooting Phase',
+        declare: 'Pick any number of friendly units that are not in combat and are within 10" of any enemy units.',
         effect:
-          'Subtract 1 from wound rolls for attacks that target friendly units while they are wholly within 3\u201d of your general.',
+          'For each of those units, pick a visible enemy unit within 10" of it and roll a dice. On a 4+, inflict D3 mortal damage on that enemy unit.',
       },
     ],
     enhancements: [
       {
-        name: 'Runic Empowerment',
+        name: 'Too Stubborn To Die',
+        timing: 'Start of Any Turn',
+        effect: 'Heal (D3) your general.',
+      },
+      {
+        name: 'Spirit of Grimnir',
+        timing: 'Passive',
+        effect: 'You can re-roll activation rolls you make for the \'Ur-gold Runes\' ability (see Battle Traits).',
+      },
+      {
+        name: 'Horn of Grimnir',
         timing: 'Your Hero Phase',
-        declare: 'Make a chanting roll of D6.',
-        effect:
-          'On a 3+, pick a visible friendly unit wholly within 12\u201d of your general. Add 1 to wound rolls for that unit\u2019s combat attacks until the start of your next turn.',
+        declare: 'Pick your general to use this ability if they are not in combat.',
+        effect: 'Roll a dice for each friendly unit on the battlefield that has any slain models. On a 3+, you can return 1 slain model to that unit.',
       },
       {
-        name: 'Tyrant Slayer',
+        name: 'Powerful Presence',
         timing: 'Passive',
-        effect: 'Add 1 to wound rolls for combat attacks made by your general that target HEROES.',
-      },
-      {
-        name: 'Ancestral Fyrd',
-        timing: 'Once Per Battle, Your Hero Phase',
-        declare: 'Make a chanting roll of D6.',
-        effect:
-          'On a 4+, you can return D3 slain models to a friendly unit wholly within 9\u201d of your general.',
-      },
-      {
-        name: 'Nulsidian Icon',
-        timing: 'Passive',
-        effect: 'Your general has WARD (5+).',
+        effect: 'Add 3 to your general\'s control score.',
       },
     ],
     units: [
       {
-        id: 'auric-runemaster',
-        name: 'Auric Runemaster',
+        id: 'battlesmith',
+        name: 'Battlesmith',
         count: '1x',
         isGeneral: true,
-        keywords: ['Hero', 'Priest', 'Infantry'],
+        keywords: ['Hero', 'Infantry'],
         move: '4\u201d',
         health: '5',
-        save: '4+',
-        ward: undefined,
-        control: '2',
+        save: '5+',
+        ward: '6+',
+        control: '5',
         rangedWeapons: [],
         meleeWeapons: [
           {
-            name: 'Runic Iron',
+            name: 'Ancestral Battle-axe',
             type: 'Melee',
-            attacks: '4',
+            attacks: '5',
             hit: '3+',
             wound: '3+',
-            rend: '-',
+            rend: '1',
             damage: '2',
           },
         ],
         abilities: [
           {
-            name: 'Searing Blow',
-            timing: 'Your Hero Phase',
-            declare:
-              'Pick a visible enemy unit within 3\u201d of this unit. Make a chanting roll of D6.',
-            effect: 'On a 3+, inflict 1 mortal damage on the target.',
-          },
-          {
-            name: 'Holy Seeker',
-            timing: 'Your Hero Phase',
-            declare: 'Make a chanting roll of D6.',
-            effect:
-              'On a 4+, pick a visible friendly unit wholly within 12\u201d of this unit. Add 1 to save rolls for that unit until the start of your next turn.',
-          },
-        ],
-      },
-      {
-        id: 'auric-hearthguard',
-        name: 'Auric Hearthguard',
-        count: '3x',
-        isGeneral: false,
-        keywords: ['Infantry'],
-        move: '4\u201d',
-        health: '2',
-        save: '4+',
-        ward: undefined,
-        control: '1',
-        rangedWeapons: [
-          {
-            name: 'Magmapike',
-            type: 'Ranged',
-            range: '18\u201d',
-            attacks: '1',
-            hit: '4+',
-            wound: '3+',
-            rend: '1',
-            damage: '2',
-            ability: 'Shoot in Combat',
-          },
-        ],
-        meleeWeapons: [
-          {
-            name: 'Magmapike',
-            type: 'Melee',
-            attacks: '2',
-            hit: '4+',
-            wound: '3+',
-            rend: '1',
-            damage: '1',
-          },
-        ],
-        abilities: [
-          {
-            name: 'Smouldering Brazier',
+            name: 'Icon of Grimnir',
             timing: 'Passive',
+            effect: 'Add 1 to save rolls for friendly units while they are wholly within 12" of this unit.',
+          },
+          {
+            name: 'Plant the Icon',
+            timing: 'Once Per Battle, Any Hero Phase',
             effect:
-              'While this unit is in combat, roll a dice at the start of each phase. On a 6, inflict 1 mortal damage on the nearest enemy unit.',
+              'For the rest of the turn, friendly units have WARD (5+) while they are wholly within 12" of this unit.',
           },
         ],
       },
@@ -2225,20 +2162,20 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
         keywords: ['Infantry'],
         move: '4\u201d',
         health: '2',
-        save: '5+',
-        ward: undefined,
+        save: '6+',
+        ward: '6+',
         control: '1',
         rangedWeapons: [],
         meleeWeapons: [
           {
             name: 'Flamestrike Poleaxe',
             type: 'Melee',
-            attacks: '3',
+            attacks: '2',
             hit: '3+',
             wound: '3+',
             rend: '1',
             damage: '2',
-            ability: 'Crit (Auto-wound)',
+            ability: 'Crit (Mortal)',
           },
         ],
         abilities: [
@@ -2246,48 +2183,644 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
             name: 'Duty Unto Death',
             timing: 'Passive',
             effect:
-              'Each time a model in this unit is slain, roll a dice. On a 4+, that model can use a FIGHT ability before it is removed from play, but all of its attacks must target the enemy unit that made the attacking hit roll.',
+              'While your general is wholly within this unit\'s combat range, both this unit and your general have WARD (5+).',
           },
         ],
       },
       {
         id: 'vulkite-berzerkers',
         name: 'Vulkite Berzerkers',
-        count: '10x',
+        count: '5x 5x 5x 5x',
         isGeneral: false,
-        keywords: ['Infantry', 'Reinforcements'],
+        keywords: ['Infantry'],
         move: '4\u201d',
-        health: '1',
-        save: '5+',
-        ward: undefined,
+        health: '2',
+        save: '6+',
+        ward: '6+',
         control: '1',
         rangedWeapons: [],
         meleeWeapons: [
           {
-            name: 'Fyresteel Handaxe',
+            name: 'Fyresteel Handaxes',
             type: 'Melee',
             attacks: '2',
             hit: '4+',
             wound: '3+',
-            rend: '-',
+            rend: '1',
             damage: '1',
+            ability: 'Anti-charge (+1 Rend)',
           },
         ],
         abilities: [
           {
-            name: 'Berserk Fury',
+            name: 'Whirlwind of Destruction',
             timing: 'Passive',
             effect:
-              'While this unit is wholly within 12\u201d of your general, add 1 to the Attacks characteristic of this unit\u2019s Fyresteel Handaxe.',
+              'Add 1 to the Attacks characteristic of this unit\'s melee weapons if it charged in the same turn.',
           },
         ],
       },
     ],
   },
-  // ---- Ossiarch Bonereapers (Tithe-Reaper Echelon) ----
+  // ---- Gloomspite Gitz - Bad Moon Madmob ----
+  {
+    id: 'gloomspite-gitz-bad-moon-madmob',
+    name: 'Gloomspite Gitz - Bad Moon Madmob',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Gloomspite Gitz - Snarlpack Huntaz ----
+  {
+    id: 'gloomspite-gitz-snarlpack-huntaz',
+    name: 'Gloomspite Gitz - Snarlpack Huntaz',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Hedonites of Slaanesh - Blades of the Lurid Dream ----
+  {
+    id: 'hedonites-of-slaanesh-blades-of-the-lurid-dream',
+    name: 'Hedonites of Slaanesh - Blades of the Lurid Dream',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Helsmiths of Hashut - Helforge Host ----
+  {
+    id: 'helsmiths-of-hashut-helforge-host',
+    name: 'Helsmiths of Hashut - Helforge Host',
+    battleTraits: [
+      {
+        name: 'Harness Daemonic Power',
+        timing: 'Once Per Turn (Army), Your Hero Phase',
+        effect: 'You must use this ability at the start of each of your hero phases. Remove all daemonic power points from each friendly unit. Then, gain a number DPP equal to the current battle round number. Then, allocate your DPP to friendly units. Each unit can have a maximum of 3 DPP. Then, all unallocated DPP are lost.'
+      },
+    ],
+    regimentalAbilities: [
+      {
+        name: 'Grinding Advance',
+        timing: 'Once Per Battle, Deployment Phase',
+        declare: 'Pick up to 2 friendly Infernal Cohort units to be the targets.',
+        effect: 'Each target can immediately move up to 3" but cannot use CHARGE abilities in the first battle round.'
+      },
+      {
+        name: 'Suppressive Bombardment',
+        timing: 'Once Per Turn, Your Shooting Phase',
+        declare: 'Pick an enemy INFANTRY unit that had any damage points allocated to it this turn as a result of shooting attacks made by a friendly Tormentor Bombard to be the target.',
+        effect: 'Until the start of your next turn, subtract 1 from the number of dice rolled when making charge rolls for the target, to a minimum of 1.'
+
+      },
+    ],
+    enhancements: [
+      {
+        name: 'Scroll of Petrification',
+        timing: 'Once Per Battle, Any Hero Phase',
+        effect: 'For the rest of the turn, your general has WARD (2+) but cannot use abilities or be picked to be the target of friendly abilities.'
+      },
+      {
+        name: 'Chalice of Darkness',
+        timing: 'Once Per Battle, Your Shooting Phase',
+        declare: 'Pick a visible enemy unit within 12" of your general to be the target.',
+        effect: 'Inflict D3 mortal damage on the target.'
+      },
+      {
+        name: 'Talisman of Obsidian',
+        timing: 'Passive',
+        effect: 'Ignore the first damage point allocated to your general in each phase.'
+      },
+      {
+        name: 'Amulet of Burning Hate',
+        timing: 'Once Per Battle, Any Combat Phase',
+        effect: 'For the rest of the turn, your general\'s attacks score critical hits on unmodified hit rolls of 5+.'
+      },
+    ],
+    units: [
+      {
+        id: 'war-despot',
+        name: 'War Despot',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Infantry'],
+        move: '4"',
+        health: '6',
+        save: '3+',
+        control: '2',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Daemonflame Glaive',
+            type: 'Melee',
+            attacks: '5',
+            hit: '3+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+            ability: 'Crit (Mortal)',
+          }
+        ],
+        abilities: [
+          {
+            name: 'Black-Hearthed Conqueror',
+            timing: 'Passive',
+            effect: 'Add 3 to the control scores of friendly units while they are wholly within 6" of this unit. Add 3" to the range of this ability for each DPP this unit has.'
+          },
+        ]
+      },
+      {
+        id: 'dominator-engine-with-immolation-cannons',
+        name: 'Dominator Engine with Immolation Cannons',
+        count: '1x',
+        isGeneral: false,
+        keywords: ['War Machine'],
+        move: '6"',
+        health: '10',
+        save: '2+',
+        control: '2',
+        rangedWeapons: [
+          {
+            name: 'Immolation Cannons',
+            type: 'Ranged',
+            range: '8"',
+            attacks: '5',
+            hit: '2+',
+            wound: '4+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Shoot in Combat'
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Horns and Pummeling Strikes',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3'
+          },
+        ],
+        abilities: [
+          {
+            name: 'Daemonic Strength',
+            timing: 'Passive',
+            effect: 'For each DPP this unit has:\n• Add 1" to its Move characteristic.\n• Add 1 to the Attacks characteristic of its weapons.'
+          }
+        ]
+      },
+      {
+        id: 'tormentor-bombard',
+        name: 'Tormentor Bombard',
+        count: '1x',
+        isGeneral: false,
+        keywords: ['War Machine'],
+        move: '4"',
+        health: '8',
+        save: '3+',
+        control: '2',
+        rangedWeapons: [
+          {
+            name: 'Torrent of Ruinous Energy',
+            type: 'Ranged',
+            range: '30"',
+            attacks: '4',
+            hit: '3+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Anti-Cavalry (+1 Rend), Anti-Infantry (+1 Rend)',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Artillerist Weapons',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '4+',
+            rend: '-',
+            damage: '1'
+          },
+        ],
+        abilities: [
+          {
+            name: 'Calculated Trajectory',
+            timing: 'Passive',
+            effect: 'Add 1 to hit rolls for this unit\'s shooting attacks that target an enemy unit with 5 or more models that is more than 12" from this unit.'
+          },
+          {
+            name: 'Ruinous Bombardment',
+            timing: 'Once Per Turn (Army), Your Shooting Phase',
+            declare: 'If this unit used a SHOOT ability this turn and all of its attacks targeted the same enemy unit, that enemy unit is the target. Then, you can pick a number of enemy units within 6" of the target equal to the number of DPP this unit has to be additional targets.',
+            effect: 'Roll a dice for each target. On a 3+, subtract 3 from the target\'s control score for the rest of the turn.'
+          },
+        ]
+      },
+      {
+        id: 'infernal-cohort-with-hashutite-spears',
+        name: 'Infernal Cohort with Hashutite Spears',
+        count: '5x* | 5x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Reinforcements'],
+        move: '4"',
+        health: '1',
+        save: '3+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Hashutite Spear',
+            type: 'Melee',
+            attacks: '2',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: '1',
+            ability: 'Anti-Charge (+1 Rend)',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Strike the Gongs',
+            timing: 'Once per Battle, Any Hero Phase',
+            effect: 'This unit\'s Gong Carrier (if any) is a token. You can remove its Gong Carrier from the battlefield and return D3 slain models to this unit.'
+          },
+          {
+            name: 'Daemonic Resiliance',
+            timing: 'Passive',
+            effect: 'Apply the effect below that corresponds with the number of DPP this unit has:\n• 1 DPP Effect: This unit has WARD (6+).\n• 2 DPP Effect: This unit has WARD (5+).\n• 3 DPP Effect: This unit has WARD (5+) and you ignore the first damage point allocated to this unit in each phase.'
+          },
+        ]
+      },
+    ]
+  },
+  // ---- Idoneth Deepkin - Akhelian Tide Guard ----
+  {
+    id: 'idoneth-deepkin-akhelian-tide-guard',
+    name: 'Idoneth Deepkin - Akhelian Tide Guard',
+    battleTraits: [
+      {
+        name: 'Royal Imperative',
+        timing: 'Once per Battle (Army), Any Combat Phase',
+        declare: 'You can only use this ability in the 3rd battle round.',
+        effect: 'Pick one of the following effects to apply for the rest of the battle round:\nInto Them!: Friendly units have STRIKE-FIRST.\nStrike Sure: Friendly units\' melee weapons have Crit (Mortal)'
+      },
+    ],
+    regimentalAbilities: [
+      {
+        name: 'The Spear of Asphoren',
+        timing: 'Once Per Turn (Army), Any Charge Phase',
+        declare: 'Pick a friendly unit that is not in combat to use this ability.',
+        effect: 'Add 1 to charge rolls for that unit for the rest of the turn.'
+      },
+      {
+        name: 'The Shield of Ulchiss',
+        timing: 'Once Per Turn (Army), Your Movement Phase',
+        declare: 'Pick a friendly unit in combat to use this ability.',
+        effect: 'For the rest of the turn, each time that unit uses a RETREAT ability, no mortal damage is inflicted on it.'
+      }
+    ],
+    enhancements: [
+      {
+        name: 'Dutiful Souls',
+        timing: 'Once Per Battle, Your Hero Phase',
+        declare: 'Pick a friendly unit wholly within 12" of your general to be the target.',
+        effect: 'You can return 1 slain model to the target unit. If the target is an INFANTRY unit, you can return D3 slain models to it instead.'
+      },
+      {
+        name: 'Shimmering Amulet',
+        timing: 'Passive',
+        effect: 'Your general has WARD (5+).'
+      },
+      {
+        name: 'Voltaic Charge',
+        timing: 'Passive',
+        effect: 'Your general\'s Akhelian Royal Weapons have Charge (+1 Damage).'
+      },
+      {
+        name: 'Soul Stealer',
+        timing: 'End of Any Turn',
+        effect: 'If your general is in combat, Heal (D3) your general.'
+      },
+    ],
+    units: [
+      {
+        id: 'akhelian-king',
+        name: 'Akhelian King',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Cavalry', 'Fly'],
+        move: '12"',
+        health: '7',
+        save: '3+',
+        control: '2',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Akhelian Royal Weapons',
+            type: 'Melee',
+            attacks: '5',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '2'
+          },
+          {
+            name: 'Deepmare\'s Fangs, Talons and Lashing Tails',
+            type: 'Melee',
+            attacks: '4',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+            ability: 'Companion'
+          },
+        ],
+        abilities: [
+          {
+            name: 'Raiders\' Resolve',
+            timing: 'Your Hero Phase',
+            declare: 'Pick another friendly unit wholly within this unit\'s combat range to be the target.',
+            effect: 'Roll a dice. On a 3+, add 1 to save rolls for the target until the start of your next turn.'
+          },
+          {
+            name: 'Wave Rider',
+            timing: 'Any Charge Phase',
+            declare: 'If this unit charged this phase, pick an enemy unit within 1" of it to be the target.',
+            effect: 'Roll a D3. On a 2+, inflict an amount of mortal damage on the target equal to the roll.'
+          },
+        ]
+      },
+      {
+        id: 'akhelian-morrsarr-guard',
+        name: 'Akhelian Morrsarr Guard',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Cavalry', 'Fly'],
+        move: '14',
+        health: '4',
+        save: '4+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Voltspear',
+            type: 'Melee',
+            attacks: '2',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '1',
+            ability: 'Charge (+1 Damage)'
+          },
+          {
+            name: 'Fangmora\'s Fangs and Lashing Tail',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Companion'
+          },
+        ],
+        abilities: [
+          {
+            name: 'Biovoltaic Blast',
+            timing: 'Once Per Battle, Any Charge Phase',
+            declare: 'If this unit charged this phase, pick an enemy unit within 1" of it to be the target.',
+            effect: 'Roll a number of dice equal to the number of models in this unit. Add 1 to each roll if there are more models in the target unit than this unit. For each 3+, inflict 1 mortal damage on the target.'
+          },
+        ]
+      },
+      {
+        id: 'akhelian-ishlaen-guard',
+        name: 'Akhelian Ishlaen Guard',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Cavalry', 'Fly'],
+        move: '14"',
+        health: '4',
+        save: '4+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Helsabre',
+            type: 'Melee',
+            attacks: '3',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '1'
+          },
+          {
+            name: 'Fangmora\'s Fangs and Lashing Tail',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Companion'
+          },
+        ],
+        abilities: [
+          {
+            name: 'Biovoltaic Barrier',
+            timing: 'Once Per Battle, Any Combat Phase',
+            declare: 'Pick an enemy unit in combat with this unit to be the target.',
+            effect: 'Roll a dice. On a 3+, subtract 1 from the Attacks characteristic of the target\'s weapons for the rest of the turn.'
+          },
+        ]
+      },
+      {
+        id: 'namarti-reavers',
+        name: 'Namarti Reavers',
+        count: '10x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Reinformcements'],
+        move: '7"',
+        health: '1',
+        save: '5+',
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Whisperbox',
+            type: 'Ranged',
+            range: '12"',
+            attacks: '2',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '1',
+            ability: 'Crit (Auto-wound)'
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Keening Blade',
+            type: 'Melee',
+            attacks: '1',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: '1'
+          },
+        ],
+        abilities: [
+          {
+            name: 'Strike on the Move',
+            timing: 'Passive',
+            effect: 'This unit can use SHOOT abilities even if it used a RUN or RETREAT ability in the same turn.'
+          },
+        ]
+      },
+    ]
+  },
+  // ---- Idoneth Deepkin - Soulraid Hunt ----
+  {
+    id: 'idoneth-deepkin-soulraid-hunt',
+    name: 'Idoneth Deepkin - Soulraid Hunt',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Kharadron Overlords - Grundstok Trailblazers ----
+  {
+    id: 'kharadron-overlords-grundstok-trailblazers',
+    name: 'Kharadron Overlords - Grundstok Trailblazers',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Kharadron Overlords - Skyhammer Task Force ----
+  {
+    id: 'kharadron-overlords-skyhammer-task-force',
+    name: 'Kharadron Overlords - Skyhammer Task Force',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Lumineth Realm-Lords - Glittering Phalanx ----
+  {
+    id: 'lumineth-realm-lords-glittering-phalanx',
+    name: 'Lumineth Realm-Lords - Glittering Phalanx',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Lumineth Realm-Lords - Hurakan Vanguard ----
+  {
+    id: 'lumineth-realm-lords-hurakan-vanguard',
+    name: 'Lumineth Realm-Lords - Hurakan Vanguard',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Maggotkin of Nurgle - Bleak Host ----
+  {
+    id: 'maggotkin-of-nurgle-bleak-host',
+    name: 'Maggotkin of Nurgle - Bleak Host',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Maggotkin of Nurgle - Bubonic Cell ----
+  {
+    id: 'maggotkin-of-nurgle-bubonic-cell',
+    name: 'Maggotkin of Nurgle - Bubonic Cell',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Nighthaunt - Cursed Shacklehorde ----
+  {
+    id: 'nighthaunt-cursed-shacklehorde',
+    name: 'Nighthaunt - Cursed Shacklehorde',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Nighthaunt - Slasher Host ----
+  {
+    id: 'nighthaunt-slasher-host',
+    name: 'Nighthaunt - Slasher Host',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Ogor Mawtribes - Scrapglutt ----
+  {
+    id: 'ogor-mawtribes-scrapglutt',
+    name: 'Ogor Mawtribes - Scrapglutt',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Ogor Mawtribes - Tyrant's Bellow ----
+  {
+    id: 'ogor-mawtribes-tyrants-bellow',
+    name: 'Ogor Mawtribes - Tyrant\'s Bellow',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Orruk Warclans - Ironjawz Bigmob ----
+  {
+    id: 'orruk-warclans-ironjawz-bigmob',
+    name: 'Orruk Warclans - Ironjawz Bigmob',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Orruk Warclans - Swampskulka Gang ----
+  {
+    id: 'orruk-warclans-swampskulka-gang',
+    name: 'Orruk Warclans - Swampskulka Gang',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Ossiarch Bonereapers - Kavalos Vanguard ----
+  {
+    id: 'ossiarch-bonereapers-kavalos-vanguard',
+    name: 'Ossiarch Bonereapers - Kavalos Vanguard',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Ossiarch Bonereapers - Mortisan Elite ----
+  {
+    id: 'ossiarch-bonereapers-mortisan-elite',
+    name: 'Ossiarch Bonereapers - Mortisan Elite',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Ossiarch Bonereapers - Tithe-Reaper Echelon ----
   {
     id: 'ossiarch-bonereapers-tithe-reaper-echelon',
-    name: 'Ossiarch Bonereapers (Tithe-Reaper Echelon)',
+    name: 'Ossiarch Bonereapers - Tithe-Reaper Echelon',
     battleTraits: [
       {
         name: 'Reserve Contingent',
@@ -2540,5 +3073,122 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
         ],
       },
     ],
+  },
+  // ---- Seraphon - Starscale Warhost ----
+  {
+    id: 'seraphon-starscale-warhost',
+    name: 'Seraphon - Starscale Warhost',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Seraphon - Sunblooded Prowlers ----
+  {
+    id: 'seraphon-sunblooded-prowlers',
+    name: 'Seraphon - Sunblooded Prowlers',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Skaven - Gnawfeast Clawpack ----
+  {
+    id: 'skaven-gnawfeast-clawpack',
+    name: 'Skaven - Gnawfeast Clawpack',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Skaven - Warpspark Clawpack ----
+  {
+    id: 'skaven-warpspark-clawpack',
+    name: 'Skaven - Warpspark Clawpack',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Ossiarch Bonereapers - Mortisan Elite ----
+  {
+    id: 'ossiarch-bonereapers-mortisan-elite',
+    name: 'Ossiarch Bonereapers - Mortisan Elite',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Slaves to Darkness - Bloodwind Legion ----
+  {
+    id: 'slaves-to-darkness-bloodwind-legion',
+    name: 'Slaves to Darkness - Bloodwind Legion',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Slaves to Darkness - Darkoath Raiders ----
+  {
+    id: 'slaves-to-darkness-darkoath-raiders',
+    name: 'Slaves to Darkness - Darkoath Raiders',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Sons of Behemat - Wallsmasher Stomp ----
+  {
+    id: 'sons-of-behemat-wallsmasher-stomp',
+    name: 'Sons of Behemat - Wallsmasher Stomp',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Soulblight Gravelords - Bloodcrave Hunt ----
+  {
+    id: 'soulblight-gravelords-bloodcrave-hunt',
+    name: 'Soulblight Gravelords - Bloodcrave Hunt',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Soulblight Gravelords - Deathrattle Tomb Host ----
+  {
+    id: 'soulblight-gravelords-deathrattle-tomb-host',
+    name: 'Soulblight Gravelords - Deathrattle Tomb Host',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Stormcast - Vigilant Brotherhood ----
+  {
+    id: 'stormcast-vigilant-brotherhood',
+    name: 'Stormcast - Vigilant Brotherhood',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Stormcast Eternals - Ydrasta's Spearhead ----
+  {
+    id: 'stormcast-eternals-ydrastas-spearhead',
+    name: 'Stormcast Eternals - Ydrasta\'s Spearhead',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
+  },
+  // ---- Sylvaneth - Bitterbark Copse ----
+  {
+    id: 'sylvaneth-bitterbark-copse',
+    name: 'Sylvaneth - Bitterbark Copse',
+    battleTraits: [],
+    regimentalAbilities: [],
+    enhancements: [],
+    units: []
   },
 ];
