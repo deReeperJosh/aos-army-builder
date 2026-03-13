@@ -2044,13 +2044,245 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       {
         name: 'Awaken the Runes',
         timing: 'Once Per Battle Round, Start of Your Turn',
-        declare: 'Pick 1 of the ur-gold runes on the right, then make an activation roll of D6. Each urgold rune can only be activated once per battle.',
-        effect: 'On a 1-5, the rune\'s standard effect applies. On a 6, the rune\'s enhanced effect applies as well. The effects last until the start of your next turn.'
+        declare:
+          'Pick 1 of the ur-gold runes below, then make an activation roll of D6. Each ur-gold rune can only be activated once per battle.',
+        effect:
+          'On a 1-5, the rune\u2019s standard effect applies. On a 6, the rune\u2019s enhanced effect applies as well. The effects last until the start of your next turn.',
+      },
+      {
+        name: 'Rune of Fiery Determination',
+        timing: 'Ur-Gold Rune',
+        effect:
+          'Standard (1\u20135): Add 1 to save rolls for friendly units.\nEnhanced (6): Friendly units have WARD (6+).',
+        keywords: ['Ur-Gold Rune'],
+      },
+      {
+        name: 'Rune of Searing Heat',
+        timing: 'Ur-Gold Rune',
+        effect:
+          'Standard (1\u20135): Add 1 to wound rolls for attacks made with friendly units\u2019 melee weapons.\nEnhanced (6): Add 1 to the Rend characteristic of friendly units\u2019 melee weapons.',
+        keywords: ['Ur-Gold Rune'],
+      },
+      {
+        name: 'Rune of Fury',
+        timing: 'Ur-Gold Rune',
+        effect:
+          'Standard (1\u20135): Add 1 to the Attacks characteristic of melee weapons used by friendly units.\nEnhanced (6): Melee weapons used by friendly units have Crit (2 Hits).',
+        keywords: ['Ur-Gold Rune'],
+      },
+      {
+        name: 'Rune of the Forge-Fire',
+        timing: 'Ur-Gold Rune',
+        effect:
+          'Standard (1\u20135): Add 1 to chanting rolls for friendly PRIEST units.\nEnhanced (6): Friendly PRIEST units can attempt to unbind 1 spell as if they were WIZARDS.',
+        keywords: ['Ur-Gold Rune'],
+      },
+      {
+        name: 'Rune of Relentless Zeal',
+        timing: 'Ur-Gold Rune',
+        effect:
+          'Standard (1\u20135): Add 2\u201d to the Move characteristic of friendly units.\nEnhanced (6): Friendly units can use a RUN ability and still use CHARGE abilities in the same turn.',
+        keywords: ['Ur-Gold Rune'],
+      },
+      {
+        name: 'Rune of Awakened Steel',
+        timing: 'Ur-Gold Rune',
+        effect:
+          'Standard (1\u20135): Add 1 to the Rend characteristic of melee weapons used by friendly units.\nEnhanced (6): Add 1 to the Damage characteristic of melee weapons used by friendly units.',
+        keywords: ['Ur-Gold Rune'],
       },
     ],
-    regimentalAbilities: [],
-    enhancements: [],
-    units: [],
+    regimentalAbilities: [
+      {
+        name: 'Fyrewall',
+        timing: 'Passive',
+        effect:
+          'Friendly units that charged this turn have WARD (6+) until the end of that turn.',
+      },
+      {
+        name: 'Oathbound',
+        timing: 'Passive',
+        effect:
+          'Subtract 1 from wound rolls for attacks that target friendly units while they are wholly within 3\u201d of your general.',
+      },
+    ],
+    enhancements: [
+      {
+        name: 'Runic Empowerment',
+        timing: 'Your Hero Phase',
+        declare: 'Make a chanting roll of D6.',
+        effect:
+          'On a 3+, pick a visible friendly unit wholly within 12\u201d of your general. Add 1 to wound rolls for that unit\u2019s combat attacks until the start of your next turn.',
+      },
+      {
+        name: 'Tyrant Slayer',
+        timing: 'Passive',
+        effect: 'Add 1 to wound rolls for combat attacks made by your general that target HEROES.',
+      },
+      {
+        name: 'Ancestral Fyrd',
+        timing: 'Once Per Battle, Your Hero Phase',
+        declare: 'Make a chanting roll of D6.',
+        effect:
+          'On a 4+, you can return D3 slain models to a friendly unit wholly within 9\u201d of your general.',
+      },
+      {
+        name: 'Nulsidian Icon',
+        timing: 'Passive',
+        effect: 'Your general has WARD (5+).',
+      },
+    ],
+    units: [
+      {
+        id: 'auric-runemaster',
+        name: 'Auric Runemaster',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Priest', 'Infantry'],
+        move: '4\u201d',
+        health: '5',
+        save: '4+',
+        ward: undefined,
+        control: '2',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Runic Iron',
+            type: 'Melee',
+            attacks: '4',
+            hit: '3+',
+            wound: '3+',
+            rend: '-',
+            damage: '2',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Searing Blow',
+            timing: 'Your Hero Phase',
+            declare:
+              'Pick a visible enemy unit within 3\u201d of this unit. Make a chanting roll of D6.',
+            effect: 'On a 3+, inflict 1 mortal damage on the target.',
+          },
+          {
+            name: 'Holy Seeker',
+            timing: 'Your Hero Phase',
+            declare: 'Make a chanting roll of D6.',
+            effect:
+              'On a 4+, pick a visible friendly unit wholly within 12\u201d of this unit. Add 1 to save rolls for that unit until the start of your next turn.',
+          },
+        ],
+      },
+      {
+        id: 'auric-hearthguard',
+        name: 'Auric Hearthguard',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Infantry'],
+        move: '4\u201d',
+        health: '2',
+        save: '4+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Magmapike',
+            type: 'Ranged',
+            range: '18\u201d',
+            attacks: '1',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+            ability: 'Shoot in Combat',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Magmapike',
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Smouldering Brazier',
+            timing: 'Passive',
+            effect:
+              'While this unit is in combat, roll a dice at the start of each phase. On a 6, inflict 1 mortal damage on the nearest enemy unit.',
+          },
+        ],
+      },
+      {
+        id: 'hearthguard-berzerkers',
+        name: 'Hearthguard Berzerkers',
+        count: '5x',
+        isGeneral: false,
+        keywords: ['Infantry'],
+        move: '4\u201d',
+        health: '2',
+        save: '5+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Flamestrike Poleaxe',
+            type: 'Melee',
+            attacks: '3',
+            hit: '3+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+            ability: 'Crit (Auto-wound)',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Duty Unto Death',
+            timing: 'Passive',
+            effect:
+              'Each time a model in this unit is slain, roll a dice. On a 4+, that model can use a FIGHT ability before it is removed from play, but all of its attacks must target the enemy unit that made the attacking hit roll.',
+          },
+        ],
+      },
+      {
+        id: 'vulkite-berzerkers',
+        name: 'Vulkite Berzerkers',
+        count: '10x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Reinforcements'],
+        move: '4\u201d',
+        health: '1',
+        save: '5+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Fyresteel Handaxe',
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Berserk Fury',
+            timing: 'Passive',
+            effect:
+              'While this unit is wholly within 12\u201d of your general, add 1 to the Attacks characteristic of this unit\u2019s Fyresteel Handaxe.',
+          },
+        ],
+      },
+    ],
   },
   // ---- Ossiarch Bonereapers (Tithe-Reaper Echelon) ----
   {
