@@ -1348,4 +1348,948 @@ export const SPEARHEAD_ARMIES: SpearheadArmy[] = [
       },
     ],
   },
+  // ---- Disciples of Tzeentch (Magister on Disc of Tzeentch) ----
+  {
+    id: 'disciples-of-tzeentch-magister',
+    name: 'Disciples of Tzeentch (Magister)',
+    battleTraits: [
+      {
+        name: 'Masters of Destiny',
+        timing: 'Once Per Battle, Start of First Battle Round',
+        effect:
+          'Roll 9 dice and put them to one side. These are your destiny dice. During the battle, instead of rolling the dice for 1 of the rolls from the list below, you can pick one of your destiny dice and use it as the roll. Once a destiny dice has been used, it is discarded.\n\nIf you want to replace a roll that uses more than one D6, you must use the same number of destiny dice (e.g., you would need to use 2 destiny dice in place of a 2D6 casting roll). Rolls that are replaced count as unmodified rolls and cannot be re-rolled or modified unless noted.\n\nThe following rolls can be replaced with destiny dice:\n\u2022 Casting rolls\n\u2022 Run rolls\n\u2022 Charge rolls\n\u2022 Hit rolls\n\u2022 Wound rolls\n\u2022 Save rolls \u2013 you must still modify the roll by the Rend characteristic of the attacking weapon.',
+      },
+    ],
+    regimentalAbilities: [
+      {
+        name: 'Transient Forms',
+        timing: 'Passive',
+        effect:
+          'Roll a dice each time a friendly Kairic Acolytes model is slain in the combat phase. On a 4+, you can return 1 slain model to a friendly Tzaangors unit within 9\u201d of the slain model.',
+      },
+      {
+        name: 'Eternal Conflagration',
+        timing: 'Passive',
+        effect:
+          'Add 1 to the Rend characteristic of ranged weapons used by friendly Flamers of Tzeentch units.',
+      },
+    ],
+    enhancements: [
+      {
+        name: 'Shield of Fate',
+        timing: 'Your Hero Phase',
+        declare: 'Pick a visible friendly unit wholly within 18\u201d of your general, then make a casting roll of 2D6.',
+        effect:
+          'On a 4+, until the start of your next turn, that unit has WARD (6+). If that unit already has a ward save, add 1 to ward rolls for that unit until the start of your next turn instead.',
+      },
+      {
+        name: 'Daemonheart',
+        timing: 'Once Per Battle, Any Combat Phase',
+        declare: 'Pick an enemy unit within 1\u201d of your general.',
+        effect:
+          'Inflict an amount of mortal damage on that unit equal to the number of the current battle round.',
+      },
+      {
+        name: 'Glimpse the Future',
+        timing: 'Your Hero Phase',
+        declare: 'If you have fewer than 6 destiny dice, make a casting roll of 2D6.',
+        effect: 'On a 7+, you can roll a dice and add it to your destiny dice.',
+      },
+      {
+        name: 'Timeslip Pendant',
+        timing: 'Once Per Battle, Any Combat Phase',
+        declare: 'Pick an enemy unit within 9\u201d of your general.',
+        effect: 'That unit has STRIKE-LAST this phase.',
+      },
+    ],
+    units: [
+      {
+        id: 'magister-on-disc-of-tzeentch',
+        name: 'Magister on Disc of Tzeentch',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Wizard', 'Cavalry', 'Fly'],
+        move: '14\u201d',
+        health: '6',
+        save: '4+',
+        ward: undefined,
+        control: '2',
+        rangedWeapons: [
+          {
+            name: 'Tzeentchian Runestaff',
+            type: 'Ranged',
+            range: '18\u201d',
+            attacks: '1',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: 'D3',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Warpsteel Sword',
+            type: 'Melee',
+            attacks: '3',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: 'D3',
+          },
+          {
+            name: "Disc's Teeth and Horns",
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Companion',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Bolt of Change',
+            timing: 'Your Hero Phase',
+            declare:
+              'Pick a visible enemy unit within 18\u201d of this unit to be the target, then make a casting roll of 2D6.',
+            effect:
+              'On a 6+, inflict D3 mortal damage on the target. If any models are slain by this ability, you can pick a friendly Tzaangors unit wholly within 18\u201d of this unit and return 1 slain model to that Tzaangors unit.',
+          },
+        ],
+      },
+      {
+        id: 'kairic-acolytes',
+        name: 'Kairic Acolytes',
+        count: '10x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Reinforcements'],
+        move: '5\u201d',
+        health: '1',
+        save: '5+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Sorcerous Bolts',
+            type: 'Ranged',
+            range: '18\u201d',
+            attacks: '1',
+            hit: '4+',
+            wound: '3+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Cursed Blade',
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '4+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Gestalt Sorcery',
+            timing: 'Your Shooting Phase',
+            declare: 'Make a casting roll of 2D6.',
+            effect: 'On a 6+, add 1 to the Rend characteristic of this unit\u2019s Sorcerous Bolts this phase.',
+          },
+        ],
+      },
+      {
+        id: 'screamers-of-tzeentch',
+        name: 'Screamers of Tzeentch',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Beast', 'Fly'],
+        move: '14\u201d',
+        health: '3',
+        save: '5+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Lamprey Bite',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Slashing Fins',
+            timing: 'Your Movement Phase',
+            declare:
+              'Pick an enemy unit that any models in this unit passed across this phase to be the target, then roll a dice for each model in this unit that did so.',
+            effect: 'For each 4+, inflict 1 mortal damage on the target.',
+          },
+        ],
+      },
+      {
+        id: 'tzaangors-magister',
+        name: 'Tzaangors',
+        count: '5x | 5x',
+        isGeneral: false,
+        keywords: ['Infantry'],
+        move: '6\u201d',
+        health: '2',
+        save: '5+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Savage Blade and Vicious Beak',
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Long-Planned Strike',
+            timing: 'Passive',
+            effect:
+              'While this unit is wholly within enemy territory, its melee weapons have Crit (2 Hits).',
+          },
+        ],
+      },
+      {
+        id: 'flamers-of-tzeentch',
+        name: 'Flamers of Tzeentch',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Fly'],
+        move: '9\u201d',
+        health: '2',
+        save: '5+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Wyrdflame',
+            type: 'Ranged',
+            range: '12\u201d',
+            attacks: '3',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: 'D3',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Flaming Maws',
+            type: 'Melee',
+            attacks: '3',
+            hit: '3+',
+            wound: '4+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Capricious Wyrdflame',
+            timing: 'Passive',
+            effect:
+              'Add 1 to hit rolls for attacks made by this unit if the target unit has 5 or more models.',
+          },
+        ],
+      },
+    ],
+  },
+  // ---- Disciples of Tzeentch (Tzaangor Shaman) ----
+  {
+    id: 'disciples-of-tzeentch-shaman',
+    name: 'Disciples of Tzeentch (Tzaangor Shaman)',
+    battleTraits: [
+      {
+        name: 'Predict the Future',
+        timing: 'Your Hero Phase',
+        effect:
+          'You can look at up to 3 cards from the top of your battle tactic deck without adding them to your hand. Then, in any order, return each card face down to either the top or the bottom of your battle tactic deck.',
+      },
+      {
+        name: 'Cheat Destiny',
+        timing: 'Reaction: You used a command on a battle tactic card',
+        effect: 'Instead of discarding that card, return it face down to the bottom of your battle tactic deck.',
+      },
+      {
+        name: 'Fated Arrival',
+        timing: 'Your Movement Phase',
+        effect:
+          'Your Tzaangor Enlightened unit is not set up during the deployment phase. Instead, from the second battle round onwards, it can use the following ability: Set up this unit wholly within friendly territory, within 1\u201d of a battlefield edge and more than 6\u201d from all enemy units.',
+      },
+    ],
+    regimentalAbilities: [
+      {
+        name: 'Constant Flux',
+        timing: 'Passive',
+        effect:
+          'Subtract 1 from the Rend characteristic of weapons used for attacks that target friendly units while you are the underdog.',
+      },
+      {
+        name: 'Arcane Ritualists',
+        timing: 'Passive',
+        effect:
+          'Add 1 to casting rolls for your general while they are wholly within 6\u201d of another friendly unit.',
+      },
+      {
+        name: 'Predicted Strike',
+        timing: 'Once Per Battle, Enemy Movement Phase',
+        declare:
+          'Pick a visible friendly unit wholly within 12\u201d of your general and that is not in combat to be the target.',
+        effect:
+          'The target can move D6\u201d. It cannot move through the combat ranges of enemy units or end that move in combat.',
+      },
+      {
+        name: 'Fold Reality',
+        timing: 'Your Hero Phase',
+        declare:
+          'Pick a visible friendly unit wholly within 12\u201d of your general to be the target, then make a casting roll of 2D6.',
+        effect:
+          'On a 6+, remove the target from the battlefield and set it up again wholly within 12\u201d of your general and more than 6\u201d from all enemy units.',
+      },
+      {
+        name: 'Infernal Gateway',
+        timing: 'Your Hero Phase',
+        declare:
+          'Pick a visible enemy unit within 18\u201d of your general to be the target, then make a casting roll of 2D6.',
+        effect:
+          'On a 5+, roll either 3 dice or a number of dice equal to the number of battle tactic cards you have discarded this battle. For each 4+, inflict 1 mortal damage on the target.',
+      },
+      {
+        name: 'Mutagenic Sorcery',
+        timing: 'End of Any Turn',
+        declare:
+          'Pick a visible enemy unit within 12\u201d of your general to be the enemy target. Then, pick a friendly Tzaangors unit in combat with the enemy target to be the friendly target.',
+        effect:
+          'Roll a D3. On a 2+:\n\u2022 Inflict an amount of mortal damage on the enemy target equal to the roll.\n\u2022 You can return 1 slain model to the friendly target.',
+      },
+    ],
+    enhancements: [],
+    units: [
+      {
+        id: 'tzaangor-shaman',
+        name: 'Tzaangor Shaman',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Wizard', 'Cavalry', 'Fly'],
+        move: '14\u201d',
+        health: '6',
+        save: '5+',
+        ward: undefined,
+        control: '2',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Staff of Change and Ritual Dagger',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+          },
+          {
+            name: "Disc's Teeth and Horns",
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Companion',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Mutative Aura',
+            timing: 'Your Hero Phase',
+            declare:
+              'Pick a visible enemy unit within 18\u201d of this unit to be the target, then make a casting roll of 2D6.',
+            effect:
+              'On a 7+, until the start of your next turn, each time an unmodified hit roll for a combat attack made by the target is 1, inflict 1 mortal damage on the target after the FIGHT ability has been resolved.',
+          },
+        ],
+      },
+      {
+        id: 'tzaangor-enlightened',
+        name: 'Tzaangor Enlightened',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Cavalry', 'Fly'],
+        move: '14\u201d',
+        health: '4',
+        save: '4+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Tzeentchian Spear and Vicious Beak',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+          },
+          {
+            name: "Disc's Teeth and Horns",
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Companion',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Deliver on Fate',
+            timing: 'Passive',
+            effect: 'Add 1 to charge rolls for this unit while you are the underdog.',
+          },
+        ],
+      },
+      {
+        id: 'tzaangor-skyfires',
+        name: 'Tzaangor Skyfires',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Cavalry', 'Fly'],
+        move: '14\u201d',
+        health: '4',
+        save: '4+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Arrow of Fate',
+            type: 'Ranged',
+            range: '18\u201d',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Bow Stave and Vicious Beak',
+            type: 'Melee',
+            attacks: '1',
+            hit: '4+',
+            wound: '3+',
+            rend: '-',
+            damage: '1',
+          },
+          {
+            name: "Disc's Teeth and Horns",
+            type: 'Melee',
+            attacks: '2',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: 'D3',
+            ability: 'Companion',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Destined Quarry',
+            timing: 'Your Shooting Phase',
+            declare:
+              'Pick an enemy unit that had any damage points allocated to it this phase by this unit\u2019s shooting attacks to be the target.',
+            effect:
+              'Add 1 to hit rolls for combat attacks made by friendly units that target that enemy unit for the rest of the turn.',
+          },
+        ],
+      },
+      {
+        id: 'tzaangors-shaman',
+        name: 'Tzaangors',
+        count: '10x',
+        isGeneral: false,
+        keywords: ['Infantry'],
+        move: '6\u201d',
+        health: '2',
+        save: '5+',
+        ward: undefined,
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Savage Blades and Vicious Beak',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Eldritch Raiders',
+            timing: 'Passive',
+            effect:
+              'Add 1 to wound rolls for this unit\u2019s attacks while it is wholly within enemy territory.',
+          },
+        ],
+      },
+    ],
+  },
+  // ---- Flesh-Eater Courts (Abhorrant Archregent) ----
+  {
+    id: 'flesh-eater-courts-archregent',
+    name: 'Flesh-Eater Courts (Archregent)',
+    battleTraits: [
+      {
+        name: 'Noble Deeds',
+        timing: 'Passive',
+        effect:
+          'Each time a friendly HERO uses a FIGHT ability, after its attacks have been resolved, give that HERO a number of noble deeds points equal to the number of damage points allocated by that ability. Each HERO can have a maximum of 6 noble deeds points at any time.',
+      },
+      {
+        name: 'Feeding Frenzy',
+        timing: 'Passive',
+        effect:
+          'Add 1 to the Attacks characteristic of melee weapons used by friendly units while they are wholly within 12\u201d of any friendly HEROES that have 6 noble deeds points.',
+      },
+      {
+        name: 'Summon Loyal Subjects',
+        timing: 'Your Movement Phase',
+        declare: 'Pick a friendly HERO with any noble deeds points to use this ability.',
+        effect:
+          'Spend any number of that HERO\u2019s noble deeds points as follows:\n\u2022 Spend 1 point to return 1 model to a friendly Cryptguard unit within 9\u201d.\n\u2022 Spend 2 points to return 1 model to a friendly Morbheg Knights unit within 9\u201d.',
+      },
+    ],
+    regimentalAbilities: [
+      {
+        name: 'Crusading Army',
+        timing: 'Passive',
+        effect: 'Add 1 to run rolls and charge rolls for friendly units.',
+      },
+      {
+        name: 'Defenders of the Realm',
+        timing: 'Passive',
+        effect:
+          'Add 1 to save rolls for friendly units that are contesting an objective you control.',
+      },
+    ],
+    enhancements: [
+      {
+        name: 'Ulguan Cloak',
+        timing: 'Passive',
+        effect: 'Your general is not visible to enemy models that are more than 12\u201d away from them.',
+      },
+      {
+        name: 'Blood-River Chalice',
+        timing: 'Once Per Battle, Your Hero Phase',
+        effect: 'Heal (2D3) your general.',
+      },
+      {
+        name: 'Rousing Oration',
+        timing: 'Your Hero Phase',
+        declare:
+          'Roll a dice for each friendly unit wholly within 12\u201d of your general. Do not roll for your general.',
+        effect: 'For each 5+, give 1 noble deeds point to your general.',
+      },
+      {
+        name: 'Crimson Victuals',
+        timing: 'Your Hero Phase',
+        declare:
+          'Pick a visible enemy unit within 18\u201d of your general to be the target, then make a casting roll of 2D6.',
+        effect:
+          'On a 6+, inflict D3 mortal damage on the target. Then, if your Cryptguard unit is within 6\u201d of the target, you can return 1 slain model to your Cryptguard unit for each damage point allocated by this ability.',
+      },
+    ],
+    units: [
+      {
+        id: 'abhorrant-archregent',
+        name: 'Abhorrant Archregent',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Infantry'],
+        move: '6\u201d',
+        health: '6',
+        save: '5+',
+        ward: '6+',
+        control: '2',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Gory Talons and Fangs',
+            type: 'Melee',
+            attacks: '5',
+            hit: '3+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Deranged Transformation',
+            timing: 'Your Hero Phase',
+            declare:
+              'Pick a visible friendly unit wholly within 18\u201d of this unit to be the target, then make a casting roll of 2D6.',
+            effect:
+              'On a 6+, until the start of your next turn, add 2\u201d to the target\u2019s Move characteristic and add 1 to wound rolls for its attacks.',
+          },
+        ],
+      },
+      {
+        id: 'cryptguard',
+        name: 'Cryptguard',
+        count: '10x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Reinforcements'],
+        move: '6\u201d',
+        health: '1',
+        save: '6+',
+        ward: '5+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Cursed Weapon',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '4+',
+            rend: '1',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Royal Bodyguard',
+            timing: 'Passive',
+            effect:
+              'Add 1 to ward rolls for friendly HEROES that are wholly within this unit\u2019s combat range.',
+          },
+        ],
+      },
+      {
+        id: 'morbheg-knights',
+        name: 'Morbheg Knights',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Cavalry', 'Fly'],
+        move: '12\u201d',
+        health: '4',
+        save: '4+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Grisly Lance',
+            type: 'Melee',
+            attacks: '2',
+            hit: '3+',
+            wound: '4+',
+            rend: '1',
+            damage: '1',
+            ability: 'Charge (+1 Damage)',
+          },
+          {
+            name: "Nightshrieker's Claws and Teeth",
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+            ability: 'Companion',
+          },
+        ],
+        abilities: [
+          {
+            name: "Predator's Pounce",
+            timing: 'Passive',
+            effect:
+              'This unit can use CHARGE abilities even if it used a RETREAT ability in the same turn. In addition, no mortal damage is inflicted on this unit when it uses RETREAT abilities.',
+          },
+        ],
+      },
+      {
+        id: 'varghulf-courtier',
+        name: 'Varghulf Courtier',
+        count: '1x',
+        isGeneral: false,
+        keywords: ['Hero', 'Infantry'],
+        move: '10\u201d',
+        health: '8',
+        save: '5+',
+        ward: '6+',
+        control: '2',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Immense Claws',
+            type: 'Melee',
+            attacks: '7',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+          },
+          {
+            name: 'Dagger-like Fangs',
+            type: 'Melee',
+            attacks: '1',
+            hit: '3+',
+            wound: '2+',
+            rend: '2',
+            damage: '3',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Victory Feast',
+            timing: 'End of Any Turn',
+            effect:
+              'If any models were slain by this unit this turn, Heal (D6) this unit, and this unit can immediately use the \u2018Retreat\u2019 ability without any mortal damage being inflicted on it.',
+          },
+        ],
+      },
+    ],
+  },
+  // ---- Flesh-Eater Courts (Abhorrant Gorewarden) ----
+  {
+    id: 'flesh-eater-courts-gorewarden',
+    name: 'Flesh-Eater Courts (Gorewarden)',
+    battleTraits: [
+      {
+        name: 'Delusions and Madness',
+        timing: 'Once Per Battle Round (Army), Start of Battle Round',
+        effect:
+          'You must use this ability at the start of each battle round. If it is the first battle round, pick a DELUSION. Otherwise, make a delusion roll by rolling a D6.\n\nOn a 1-3, you must pick a different DELUSION to the one you picked last time. On a 4+, you must pick the same DELUSION as last time. For the rest of the battle round, you believe the DELUSION you picked.',
+      },
+      {
+        name: 'Of the Great Feast',
+        timing: 'Once Per Turn (Army), End of Any Turn',
+        declare: 'If you believe this DELUSION, pick each friendly unit on the battlefield to be the targets.',
+        effect:
+          'Heal (1) each target. If the target is a SERFS unit, return D3 slain models to it instead.',
+        keywords: ['Delusion'],
+      },
+      {
+        name: 'Delusion of the Knightly Host',
+        timing: 'Passive',
+        effect:
+          'While you believe this DELUSION, if the unmodified charge roll for a friendly HERO or KNIGHTS unit is 8+, add 1 to hit rolls for that unit\u2019s combat attacks for the rest of the turn.',
+        keywords: ['Delusion'],
+      },
+    ],
+    regimentalAbilities: [
+      {
+        name: 'Delusion of the Sentinel',
+        timing: 'Passive',
+        effect:
+          'While you believe this DELUSION, add 1 to ward rolls for friendly units while each model in the unit is contesting an objective.',
+        keywords: ['Delusion'],
+      },
+      {
+        name: 'Delusion of the Hunter',
+        timing: 'Passive',
+        effect:
+          'While you believe this DELUSION, add 1 to wound rolls for combat attacks made by friendly units while no models in the unit are contesting an objective.',
+        keywords: ['Delusion'],
+      },
+      {
+        name: 'Almost Lucid',
+        timing: 'Once Per Battle, Reaction: You declared the \u2018Delusions and Madness\u2019 ability',
+        effect: 'You can re-roll the delusion roll.',
+      },
+      {
+        name: 'Companion of the Hunt',
+        timing: 'End of Any Turn',
+        effect:
+          'If your general is not in combat, they can move 3\u201d. They cannot move into combat during any part of that move.',
+      },
+      {
+        name: 'A Worthy Challenge',
+        timing: 'Once Per Battle, Any Combat Phase',
+        declare:
+          'Pick an enemy unit that started the battle with 3 or fewer models and is in combat with your general to be the target. Your opponent must decide whether the target will accept or refuse your general\u2019s challenge.',
+        effect:
+          '\u2022 If they accept, for the rest of the phase, when your general and the target are picked to use a FIGHT ability, all of their attacks must target each other.\n\u2022 If they refuse, the target has STRIKE-LAST for the rest of the phase.',
+      },
+      {
+        name: 'Choirmaster',
+        timing: 'Once Per Battle, Your Shooting Phase',
+        declare: 'Pick a visible enemy unit within 6\u201d of your general to be the target.',
+        effect:
+          'For the rest of the turn, add 1 to the Damage characteristic of friendly units\u2019 ranged weapons for attacks that target that enemy unit.',
+      },
+    ],
+    enhancements: [],
+    units: [
+      {
+        id: 'abhorrant-gorewarden',
+        name: 'Abhorrant Gorewarden',
+        count: '1x',
+        isGeneral: true,
+        keywords: ['Hero', 'Wizard', 'Infantry', 'Fly'],
+        move: '12\u201d',
+        health: '7',
+        save: '5+',
+        ward: '6+',
+        control: '2',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Gory Talons and Fangs',
+            type: 'Melee',
+            attacks: '5',
+            hit: '3+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Sound the Pursuit!',
+            timing: 'Your Hero Phase',
+            declare:
+              'Pick a friendly unit wholly within 12\u201d of this unit to be the target, then make a casting roll of 2D6.',
+            effect:
+              'On a 6+, until the start of your next turn, when making charge rolls for the target, add 1 to the number of dice rolled, to a maximum of 3, then remove 1 dice of your choice and use the remaining dice as the charge roll.',
+          },
+        ],
+      },
+      {
+        id: 'royal-beastflayers',
+        name: 'Royal Beastflayers',
+        count: '10x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Serfs'],
+        move: '6\u201d',
+        health: '1',
+        save: '6+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Beastflayer Weapons',
+            type: 'Melee',
+            attacks: '3',
+            hit: '4+',
+            wound: '4+',
+            rend: '-',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Lie of the Land',
+            timing: 'Your Movement Phase',
+            effect:
+              'If this unit is not in combat and is wholly within 6\u201d of a battlefield edge, remove this unit from the battlefield and set it up again wholly within 6\u201d of a battlefield edge and more than 6\u201d from all enemy units.',
+          },
+        ],
+      },
+      {
+        id: 'crypt-horrors',
+        name: 'Crypt Horrors',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Knights', 'Reinforcements'],
+        move: '7\u201d',
+        health: '4',
+        save: '5+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [],
+        meleeWeapons: [
+          {
+            name: 'Club and Septic Talons',
+            type: 'Melee',
+            attacks: '4',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '2',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Holy Blades of Bone',
+            timing: 'Any Combat Phase',
+            declare:
+              'Pick an enemy unit in combat with this unit and that charged this turn to be the target.',
+            effect:
+              'Roll a dice for each model in the target unit. For each 5+, inflict 1 mortal damage on the target unit.',
+          },
+        ],
+      },
+      {
+        id: 'crypt-flayers',
+        name: 'Crypt Flayers',
+        count: '3x',
+        isGeneral: false,
+        keywords: ['Infantry', 'Knights', 'Fly'],
+        move: '12\u201d',
+        health: '4',
+        save: '5+',
+        ward: '6+',
+        control: '1',
+        rangedWeapons: [
+          {
+            name: 'Death Scream',
+            type: 'Ranged',
+            range: '10\u201d',
+            attacks: '4',
+            hit: '4+',
+            wound: '3+',
+            rend: '2',
+            damage: '1',
+            ability: 'Shoot in Combat',
+          },
+        ],
+        meleeWeapons: [
+          {
+            name: 'Piercing Talons',
+            type: 'Melee',
+            attacks: '4',
+            hit: '4+',
+            wound: '3+',
+            rend: '1',
+            damage: '1',
+          },
+        ],
+        abilities: [
+          {
+            name: 'Unholy Chorus',
+            timing: 'Your Shooting Phase',
+            declare: 'Pick a visible enemy unit within 10\u201d of this unit to be the target.',
+            effect:
+              'For the rest of the turn, subtract an amount from the target\u2019s control score equal to the number of damage points allocated to the target this phase by this unit\u2019s shooting attacks.',
+          },
+        ],
+      },
+    ],
+  },
 ];
