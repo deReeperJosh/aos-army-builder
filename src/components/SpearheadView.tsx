@@ -9,6 +9,7 @@ const TIMING_SECTIONS = [
   'Deployment Phase',
   'Start of Battle Round',
   'Start of Turn',
+  'Start of Any Turn',
   'Your Hero Phase',
   'Your Movement Phase',
   'Your Shooting Phase',
@@ -64,6 +65,11 @@ function matchTimingToSections(timing: string): string[] {
     sections.push('End of Any Turn');
   } else if (t.includes('end of turn')) {
     sections.push('End of Turn');
+  }
+  if (t.includes('start of any turn')) {
+    sections.push('Start of Any Turn');
+  } else if (t.includes('start of your turn')) {
+    sections.push('Start of Turn');
   }
   if (sections.length > 0) return sections;
   for (const section of TIMING_SECTIONS) {
