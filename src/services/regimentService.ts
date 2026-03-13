@@ -20,7 +20,7 @@ export interface UnitOption {
   /** Wargear option groups available for this unit (e.g. "Wargear Options": Chaintrap / Blood Vulture). */
   wargearGroups: WargearOptionGroup[];
   /** Enhancement group references (Heroic Traits, Artefacts of Power, Big Names) from the entry link. */
-  enhancementGroupRefs: { name: string; targetId: string }[];
+  enhancementGroupRefs: { name: string; targetId: string; hidden: boolean; conditionalForceIds: string[] }[];
   /** Optional command model names (e.g. ["Champion", "Musician", "Standard Bearer"]). */
   commandModelOptions: string[];
 }

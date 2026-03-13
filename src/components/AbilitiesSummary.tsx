@@ -165,15 +165,39 @@ export function AbilitiesSummary({ army }: AbilitiesSummaryProps) {
   const passiveAbilities: AbilityEntry[] = [];
   const activatedAbilities: AbilityEntry[] = [];
 
+  const classifyUnitProfile = (profile: Profile, unitLabel: string) => {
+    if (profile.hidden) return;
+    const typeName = profile.typeName ?? '';
+    if (typeName === 'Ability (Passive)') {
+      passiveAbilities.push({ unitName: unitLabel, profile });
+    } else if (
+      typeName === 'Ability (Activated)' ||
+      typeName === 'Ability (Command)' ||
+      typeName === 'Ability (Spell)' ||
+      typeName === 'Ability (Prayer)'
+    ) {
+      activatedAbilities.push({ unitName: unitLabel, profile });
+    }
+  };
+
   for (const unit of allUnits) {
     const isGeneral = unit.id === army.generalUnitId;
     const unitLabel = isGeneral ? `${unit.name} ⭐` : unit.name;
+    // Base unit profiles
     for (const profile of unit.profiles) {
-      const typeName = profile.typeName ?? '';
-      if (typeName === 'Ability (Passive)') {
-        passiveAbilities.push({ unitName: unitLabel, profile });
-      } else if (typeName === 'Ability (Activated)') {
-        activatedAbilities.push({ unitName: unitLabel, profile });
+      classifyUnitProfile(profile, unitLabel);
+    }
+    // Wargear profiles (abilities from selected wargear options)
+    for (const wargear of unit.selectedWargear ?? []) {
+      for (const profile of wargear.profiles) {
+        classifyUnitProfile(profile, unitLabel);
+      }
+    }
+    // Enhancement profiles (Heroic Traits, Artefacts of Power, Big Names, etc.)
+    for (const enhancement of unit.selectedEnhancements ?? []) {
+      const enhLabel = `${unitLabel} • ${enhancement.optionName}`;
+      for (const profile of enhancement.profiles) {
+        classifyUnitProfile(profile, enhLabel);
       }
     }
   }
@@ -289,12 +313,17 @@ function AbilityCard({
   const cost = charMap.get('Cost') ?? charMap.get('Casting Value') ?? charMap.get('Chanting Value');
   const keywords = charMap.get('Keywords');
 
+  // Detect "once per" restrictions in the timing text for prominent display
+  const oncePerMatch = timing ? /once per (battle|turn|phase)/i.exec(timing) : null;
+  const oncePer = oncePerMatch ? oncePerMatch[0] : null;
+
   return (
     <div className="ability-card">
       <div className="ability-card-header">
         <span className="ability-name">{profile.name}</span>
         <span className="ability-unit">{unitName}</span>
       </div>
+      {oncePer && <div className="ability-once-per-badge">{oncePer.toUpperCase()}</div>}
       {showTiming && timing && (
         <div className="ability-timing">{parseKeywords(timing)}</div>
       )}
